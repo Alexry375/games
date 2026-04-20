@@ -57,11 +57,18 @@ Chaque essai y atterrit comme une note ou un mini-projet. Le but : avant le jour
 
 ## 🏎️ HexGL — bot autonome
 
-Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL) (Wipeout-like WebGL). On a codé **un bot capable de jouer à HexGL tout seul** et **créé un circuit custom** pour le tester. Utile pour explorer le pilotage d'un jeu existant par un agent.
+Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL) (Wipeout-like WebGL). On a codé **un bot capable de jouer tout seul** et **créé un circuit custom** pour le tester. Utile pour explorer le pilotage d'un jeu existant par un agent.
 
 ```bash
 cd HexGL
-npx serve .
+npm install                             # playwright pour le bot
+
+# jeu normal (ouvre http://localhost:8000)
+python3 -m http.server 8000
+
+# bot en streaming (lance + capture console + screenshots)
+node tools/benchmark-ai.js              # N runs auto-pilotés
+node tools/capture-console.js           # run + stream des logs console
 ```
 
 ---

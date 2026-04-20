@@ -16,6 +16,5 @@ Thumbs.db
 # Keep nested repo history dirs out but preserve their sources
 **/.git.backup/
 
-# Heavy dev tools that aren't needed to run the demos
-HexGL/tools/
 HexGL/package.zip
+HexGL/tools/ai-t*.png
