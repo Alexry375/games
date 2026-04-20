@@ -138,6 +138,28 @@ describe('applyPlayerAction — fire', () => {
   });
 });
 
+describe('applyPlayerAction — skip', () => {
+  beforeEach(() => resetIds());
+  it('skip returns empty anims, unchanged mobs', () => {
+    const base = spawnWave(createInitialState(), 0);
+    const s0: GameState = { ...base, phase: 'PlayerTurn' };
+    const { state, anims } = applyPlayerAction(s0, { kind: 'skip' });
+    expect(state.mobs).toEqual(s0.mobs);
+    expect(anims).toEqual([]);
+  });
+});
+
+describe('defeat edge cases', () => {
+  beforeEach(() => resetIds());
+
+  it('UFO at 0 HP mid-enemy-turn stops remaining fires', () => {
+    const base = spawnWave(createInitialState(), 2);
+    const s0: GameState = { ...base, phase: 'EnemyTurn', ufo: { hp: 1, hpMax: 15 } };
+    const { state } = resolveEnemyTurn(s0);
+    expect(state.ufo.hp).toBe(0);
+  });
+});
+
 describe('resolveEnemyTurn', () => {
   beforeEach(() => resetIds());
 
