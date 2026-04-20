@@ -1,0 +1,21 @@
+node_modules/
+.next/
+dist/
+build/
+out/
+.turbo/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+.vercel/
+
+# Keep nested repo history dirs out but preserve their sources
+**/.git.backup/
+
+# Heavy dev tools that aren't needed to run the demos
+HexGL/tools/
+HexGL/package.zip
