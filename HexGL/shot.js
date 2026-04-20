@@ -1,0 +1,23 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch();
+  const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  const errs = [];
+  p.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errs.push(`[${m.type()}] ${m.text()}`); });
+  p.on('pageerror', e => errs.push(`[pageerror] ${e.message}`));
+  p.on('requestfailed', r => errs.push(`[reqfail] ${r.url()} — ${r.failure()?.errorText}`));
+  await p.goto('http://localhost:3000', { waitUntil: 'networkidle', timeout: 20000 });
+  await p.waitForTimeout(1500);
+  await p.screenshot({ path: '/tmp/anti-scroll-01-idle.png' });
+  await p.locator('button:has-text("Notif")').click();
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: '/tmp/anti-scroll-02-notif.png' });
+  await p.waitForTimeout(4200);
+  await p.locator('button:has-text("Appel")').click();
+  await p.waitForTimeout(900);
+  await p.screenshot({ path: '/tmp/anti-scroll-03-call.png' });
+  console.log(`\n=== CONSOLE ISSUES (${errs.length}) ===`);
+  errs.forEach(e => console.log(e));
+  await b.close();
+})();

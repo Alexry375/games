@@ -1,0 +1,24 @@
+{
+  "name": "hexgl",
+  "version": "1.0.0",
+  "description": "HexGL =========",
+  "main": "launch.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BKcore/HexGL.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BKcore/HexGL/issues"
+  },
+  "homepage": "https://github.com/BKcore/HexGL#readme",
+  "dependencies": {
+    "playwright": "^1.59.1",
+    "pngjs": "^7.0.0"
+  }
+}
