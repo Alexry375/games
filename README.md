@@ -32,29 +32,12 @@ Ce dépôt est une **collection de ressources** pour trouver les **stacks idéal
 
 ## 🎮 anti-scroll — premier check « UI de jeu »
 
-**Mon tout premier jeu web, codé en ~1h30.** Pas un jeu fini et addictif : un **test** pour valider qu'on peut livrer une UI vraiment pro avec Claude Code, sans le look « vibe-coded » typique (gradients pastel, emojis en guise d'icônes, arrondis partout, défauts shadcn).
+Mon premier jeu web, codé en ~1h30. Pas allé au bout de la boucle addictive — c'était un test pour valider qu'on peut livrer une UI vraiment pro avec Claude Code. Faux iPhone, un PNJ scrolle un feed TikTok-like tout seul, le joueur déclenche notifs/appels/messages pour le faire lâcher.
 
-### Concept
-
-Un faux iPhone plein écran. Un PNJ scrolle un feed TikTok-like tout seul — sa main apparaît par le bas et swipe les vidéos. **Le joueur ne peut pas scroller.** À la place, il dispose d'une palette d'outils pour faire lâcher le téléphone au PNJ : notifs, appels, messages de la copine…
-
-- **Jauge d'engagement** (gauche) : monte à chaque swipe. 100 % → défaite.
-- **Jauge d'ennui** (droite) : monte à chaque outil utilisé, bonus si on interrompt un swipe en cours. 100 % → victoire, le PNJ pose son téléphone.
-- **Cookie-Clicker** : on débloque de nouveaux outils au fil des usages.
-
-### Ce qu'on a appris
-
-- **UI-only 2D = stack webapp classique qui suffit largement.** Ici c'était surtout des déclenchements d'animations, donc Next.js + React + Tailwind + Framer Motion + lucide + OKLCH, 100 % DOM/CSS, pas de canvas.
-- Claude sort une UI propre si on lui donne des **règles dures** (une seule hue OKLCH, shadows stackées, `tabular-nums`, jamais d'emoji comme icône…).
-- **Je ne suis pas allé au bout** : pas de progression longue, pas de sons, pas de vrai polish gameplay. L'exercice était la surface, pas la boucle addictive.
-
-### Lancer en local
+**Leçon** : UI-only 2D = stack webapp classique suffit largement. Pas de canvas nécessaire quand c'est surtout des déclenchements d'animations.
 
 ```bash
-cd anti-scroll
-npm install
-npm run dev
-# → http://localhost:3000
+cd anti-scroll && npm install && npm run dev
 ```
 
 ---
