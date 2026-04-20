@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createInitialState, spawnWave } from './state';
-import { applyPlayerAction } from './logic';
+import { applyPlayerAction, resolveEnemyTurn } from './logic';
 import { resetIds } from './ids';
 import { WEAPON_STATS } from './rules';
 import type { GameState } from './types';
@@ -135,5 +135,71 @@ describe('applyPlayerAction — fire', () => {
     const { state } = applyPlayerAction(s0, { kind: 'fire', slotIndex: 0, targetId: target.id });
     expect(state.slots[0]!.pendingExplosion).toEqual({ atAngle: target.angle, turnsLeft: 1 });
     expect(state.slots[0]!.cooldown).toBe(2);
+  });
+});
+
+describe('resolveEnemyTurn', () => {
+  beforeEach(() => resetIds());
+
+  it('grunt deals 1 dmg to UFO', () => {
+    const base = spawnWave(createInitialState(), 0);
+    const { state } = resolveEnemyTurn({ ...base, phase: 'EnemyTurn' });
+    expect(state.ufo.hp).toBe(15 - 2);
+  });
+
+  it('brute deals 3 dmg every 2 turns (turn0=no, turn1=yes)', () => {
+    const base = spawnWave(createInitialState(), 1);
+    const r1 = resolveEnemyTurn({ ...base, phase: 'EnemyTurn' });
+    expect(r1.state.ufo.hp).toBe(15 - 2 - 3);
+    const r2 = resolveEnemyTurn({ ...r1.state, phase: 'EnemyTurn' });
+    expect(r2.state.ufo.hp).toBe(r1.state.ufo.hp - 2);
+  });
+
+  it('medic heals most-wounded ally, left tie-break', () => {
+    const base = spawnWave(createInitialState(), 3);
+    const brute = base.mobs.find(m => m.kind === 'brute')!;
+    const mobs = base.mobs.map(m => m.id === brute.id ? { ...m, hp: 1 } : m);
+    const { state } = resolveEnemyTurn({ ...base, mobs, phase: 'EnemyTurn' });
+    const brAfter = state.mobs.find(m => m.id === brute.id)!;
+    expect(brAfter.hp).toBe(2);
+  });
+
+  it('medic cannot over-heal past hpMax', () => {
+    const base = spawnWave(createInitialState(), 3);
+    const { state } = resolveEnemyTurn({ ...base, phase: 'EnemyTurn' });
+    for (const m of state.mobs) expect(m.hp).toBeLessThanOrEqual(m.hpMax);
+  });
+
+  it('bomber ticks fuse null→2, 2→1, 1→0 explode, dies', () => {
+    const base = spawnWave(createInitialState(), 4);
+    const bomber = base.mobs.find(m => m.kind === 'bomber')!;
+    const t1 = resolveEnemyTurn({ ...base, phase: 'EnemyTurn' });
+    expect(t1.state.mobs.find(m => m.id === bomber.id)!.fuseLeft).toBe(2);
+    const t2 = resolveEnemyTurn({ ...t1.state, phase: 'EnemyTurn' });
+    expect(t2.state.mobs.find(m => m.id === bomber.id)!.fuseLeft).toBe(1);
+    const t3 = resolveEnemyTurn({ ...t2.state, phase: 'EnemyTurn' });
+    expect(t3.state.mobs.find(m => m.id === bomber.id)).toBeUndefined();
+  });
+
+  it('cooldowns decrement at end of enemy turn', () => {
+    const base = spawnWave(createInitialState(), 0);
+    const s0 = {
+      ...base, phase: 'EnemyTurn' as const,
+      slots: [{ kind: 'cannon' as const, cooldown: 2, pendingExplosion: null }, null, null] as GameState['slots'],
+    };
+    const { state } = resolveEnemyTurn(s0);
+    expect(state.slots[0]!.cooldown).toBe(1);
+  });
+
+  it('pending bomb player explodes at end of turn, dmg mobs in 15° radius', () => {
+    const base = spawnWave(createInitialState(), 2);
+    const target = base.mobs[1]!;
+    const s0: GameState = {
+      ...base, phase: 'EnemyTurn',
+      slots: [{ kind: 'bomb', cooldown: 2, pendingExplosion: { atAngle: target.angle, turnsLeft: 1 } }, null, null],
+    };
+    const { state } = resolveEnemyTurn(s0);
+    expect(state.slots[0]!.pendingExplosion).toBeNull();
+    expect(state.mobs.find(m => m.id === target.id)).toBeUndefined();
   });
 });
