@@ -4,11 +4,35 @@ Bac à sable de préparation pour le hackathon **Voodoo × Anthropic** (Paris, 2
 
 Co-dev : [@Alexry375](https://github.com/Alexry375) et [@DanielMbouyou](https://github.com/DanielMbouyou).
 
+Ce dépôt est une **collection de ressources** pour trouver les **stacks idéales pour vibe-coder des jeux avec Claude Code**. Chaque sous-dossier est un test concret, pas une démo finie. L'objectif n'est pas de livrer des jeux — c'est de cartographier ce qui marche, ce qui hallucine, ce qui scale.
+
 ---
 
-## 🎮 anti-scroll (projet principal)
+## 🧭 Ce qu'on cherche à apprendre
 
-**Mon tout premier jeu web, codé en ~1h30.** L'objectif n'était pas de livrer un jeu fini et addictif, mais de **tester la capacité de Claude Code à produire une UI vraiment pro**, sans le look « vibe-coded » typique (gradients pastel, emojis en guise d'icônes, arrondis partout, défauts shadcn).
+### Les stacks testées / à tester
+
+| Besoin | Stack | Pourquoi |
+|---|---|---|
+| UI de jeu 2D pas trop complexe, surtout des animations déclenchées | **Next.js + React + Tailwind + Framer Motion + lucide + OKLCH** (DOM/CSS, pas de canvas) | Très proche d'une webapp normale — Claude est ultra-à-l'aise. On livre des UI propres vite. Limite : dès qu'il faut du temps réel ou beaucoup d'entités, ça casse. |
+| 2D plus ambitieux (plateformer, shoot'em up, collisions, sprites) | **Phaser 3** (canvas/WebGL 2D) | Beaucoup de data dans l'entraînement → peu d'hallucinations. |
+| Passer en 3D | **Three.js** (WebGL 3D) | Idem, gros corpus public → Claude génère du code qui tourne. |
+
+### Tooling qu'on va vouloir câbler
+
+- **Skill `OpusGameLabs/game-creator`** pour le scaffold initial
+- **Playwright MCP + chrome-devtools-mcp** pour que Claude **voie ce qu'il code** (screenshots + erreurs console WebGL en boucle de feedback)
+- **Vite / HMR** pour l'itération rapide
+
+### Règle empirique qu'on teste
+
+> **DOM/CSS tant que tu peux, Canvas dès que tu dois.** Dès qu'il y a du vrai temps réel, de la physique, ou beaucoup d'entités à l'écran → bascule sur canvas/WebGL.
+
+---
+
+## 🎮 anti-scroll — premier check « UI de jeu »
+
+**Mon tout premier jeu web, codé en ~1h30.** Pas un jeu fini et addictif : un **test** pour valider qu'on peut livrer une UI vraiment pro avec Claude Code, sans le look « vibe-coded » typique (gradients pastel, emojis en guise d'icônes, arrondis partout, défauts shadcn).
 
 ### Concept
 
@@ -16,22 +40,13 @@ Un faux iPhone plein écran. Un PNJ scrolle un feed TikTok-like tout seul — sa
 
 - **Jauge d'engagement** (gauche) : monte à chaque swipe. 100 % → défaite.
 - **Jauge d'ennui** (droite) : monte à chaque outil utilisé, bonus si on interrompt un swipe en cours. 100 % → victoire, le PNJ pose son téléphone.
-- **Cookie-Clicker** : on débloque de nouveaux outils au fil des usages (Appel Maman après 5 notifs, Message Camille après 10 usages cumulés).
+- **Cookie-Clicker** : on débloque de nouveaux outils au fil des usages.
 
-### Statut honnête
+### Ce qu'on a appris
 
-Ce qui est bien : l'UI (bezel iOS, Dynamic Island, status bar, toasts, appel entrant plein écran, grain SVG, typo `-apple-system` à l'intérieur du téléphone, tokens OKLCH, shadows stackées à la Josh Comeau). Ça ne ressemble pas à un truc généré à la chaîne.
-
-Ce qui manque : **je ne suis pas allé au bout de l'idée**. Le jeu tient debout mais n'est pas vraiment addictif — pas de progression longue, pas de vrais paliers de difficulté, pas de sons, pas de polish gameplay. L'exercice était de valider que je peux livrer une belle surface, pas un jeu complet. Le cœur du hackathon sera de transformer cette base en vraie boucle addictive.
-
-### Stack
-
-- **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
-- **Tailwind v4** (tokens OKLCH via `@theme inline`)
-- **Framer Motion** pour les animations (spring, AnimatePresence)
-- **lucide-react** (jamais d'emoji comme icône)
-- Main du PNJ : SVG adapté d'[OpenMoji](https://openmoji.org) (CC BY-SA 4.0)
-- 100 % DOM/CSS — pas de Canvas, pas de Three.js, pas de Phaser
+- **UI-only 2D = stack webapp classique qui suffit largement.** Ici c'était surtout des déclenchements d'animations, donc Next.js + React + Tailwind + Framer Motion + lucide + OKLCH, 100 % DOM/CSS, pas de canvas.
+- Claude sort une UI propre si on lui donne des **règles dures** (une seule hue OKLCH, shadows stackées, `tabular-nums`, jamais d'emoji comme icône…).
+- **Je ne suis pas allé au bout** : pas de progression longue, pas de sons, pas de vrai polish gameplay. L'exercice était la surface, pas la boucle addictive.
 
 ### Lancer en local
 
@@ -44,21 +59,33 @@ npm run dev
 
 ---
 
+## 🧪 games-skill — terrain d'expérimentation principal
+
+C'est **ici qu'on va faire des dingueries**. À partir de maintenant je teste :
+
+- **Phaser 3** pour un 2D plus ambitieux (plateformer, shoot'em up)
+- **Three.js** pour toucher du 3D
+- Intégration **Playwright MCP / chrome-devtools-mcp** pour la boucle de feedback visuelle
+- Skill **game-creator** pour accélérer le scaffold
+
+Chaque essai y atterrit comme une note ou un mini-projet. Le but : avant le jour J du hackathon, savoir **quelle stack prendre selon le concept**, les doigts dans le nez.
+
+---
+
 ## 🏎️ HexGL — bot autonome
 
 Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL) (Wipeout-like WebGL). On a codé **un bot capable de jouer à HexGL tout seul** et **créé un circuit custom** pour le tester. Utile pour explorer le pilotage d'un jeu existant par un agent.
 
 ```bash
 cd HexGL
-# serveur statique (python, serve, ou autre)
 npx serve .
 ```
 
 ---
 
-## 🛹 Sketchbook — sandbox 3D
+## 🛹 Sketchbook — sandbox 3D réservée
 
-Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook) (sandbox Three.js + cannon.js : personnages, véhicules, avions, physique). Pas utilisé à fond, gardé comme **base potentiellement utile** si on veut partir sur un concept 3D au hackathon — toute la plomberie physique + scène est déjà en place.
+Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook) (Three.js + cannon.js : personnages, véhicules, avions, physique). Pas utilisé à fond — gardé comme **base potentiellement utile** si un concept 3D ambitieux émerge au hackathon, toute la plomberie physique + scène est déjà en place.
 
 ```bash
 cd Sketchbook
@@ -72,10 +99,10 @@ npm run dev
 
 ```
 games/
-├── anti-scroll/     ← premier jeu web, UI-first
+├── anti-scroll/     ← 1er check UI, stack webapp classique
+├── games-skill/     ← terrain principal d'expérimentation (Phaser, Three.js, MCP…)
 ├── HexGL/           ← fork + bot + circuit custom
-├── Sketchbook/      ← fork, sandbox 3D réservé pour idées
-└── games-skill/     ← notes skill/méta
+└── Sketchbook/      ← fork Three.js, sandbox 3D en réserve
 ```
 
 ## Crédits
