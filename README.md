@@ -1,81 +1,75 @@
 # games
 
-Bac à sable de préparation pour le hackathon **Voodoo × Anthropic** (Paris, 25–26 avril 2026).
+Dépôt de préparation pour le hackathon **Voodoo × Anthropic** (Paris, 25–26 avril 2026).
 
-Co-dev : [@Alexry375](https://github.com/Alexry375) et [@DanielMbouyou](https://github.com/DanielMbouyou).
+Collaborateurs : [@Alexry375](https://github.com/Alexry375), [@DanielMbouyou](https://github.com/DanielMbouyou).
 
-Ce dépôt est une **collection de ressources** pour trouver les **stacks idéales pour vibe-coder des jeux avec Claude Code**. Chaque sous-dossier est un test concret, pas une démo finie. L'objectif n'est pas de livrer des jeux — c'est de cartographier ce qui marche, ce qui hallucine, ce qui scale.
+## Objectif
 
----
+Ce dépôt regroupe des expérimentations visant à identifier les **stacks les plus efficaces pour développer des jeux web avec Claude Code**. Chaque sous-dossier correspond à un test ciblé. L'objectif n'est pas de livrer des jeux finis, mais de cartographier, pour chaque type de gameplay, la stack qui minimise les hallucinations du modèle et maximise la qualité du résultat.
 
-## 🧭 Ce qu'on cherche à apprendre
+## Stacks évaluées
 
-### Les stacks testées / à tester
-
-| Besoin | Stack | Pourquoi |
+| Type de jeu | Stack retenue | Justification |
 |---|---|---|
-| UI de jeu 2D pas trop complexe, surtout des animations déclenchées | **Next.js + React + Tailwind + Framer Motion + lucide + OKLCH** (DOM/CSS, pas de canvas) | Très proche d'une webapp normale — Claude est ultra-à-l'aise. On livre des UI propres vite. Limite : dès qu'il faut du temps réel ou beaucoup d'entités, ça casse. |
-| 2D plus ambitieux (plateformer, shoot'em up, collisions, sprites) | **Phaser 3** (canvas/WebGL 2D) | Beaucoup de data dans l'entraînement → peu d'hallucinations. |
-| Passer en 3D | **Three.js** (WebGL 3D) | Idem, gros corpus public → Claude génère du code qui tourne. |
+| UI 2D non temps réel (animations déclenchées, logique d'état simple) | Next.js + React + Tailwind + Framer Motion (DOM/CSS) | Corpus d'entraînement massif sur le web standard ; Claude produit une UI propre rapidement. Limite : ne scale pas sur le temps réel ou les nombreuses entités. |
+| 2D ambitieux (plateformer, shoot'em up, physique, sprites) | Phaser 3 (Canvas/WebGL) | Large documentation publique ; le modèle génère du code fiable. |
+| 3D | Three.js (WebGL) | Même raison ; écosystème mature et bien documenté. |
 
-### Tooling qu'on va vouloir câbler
+**Heuristique retenue** : DOM/CSS par défaut, bascule sur Canvas/WebGL dès que le gameplay exige du temps réel, de la physique ou un grand nombre d'entités à l'écran.
 
-- **Skill `OpusGameLabs/game-creator`** pour le scaffold initial
-- **Playwright MCP + chrome-devtools-mcp** pour que Claude **voie ce qu'il code** (screenshots + erreurs console WebGL en boucle de feedback)
+## Outillage ciblé
+
+- **Skill `OpusGameLabs/game-creator`** pour le scaffolding initial
+- **Playwright MCP** et **chrome-devtools-mcp** pour fournir au modèle une boucle de feedback visuelle (captures d'écran, erreurs console WebGL)
 - **Vite / HMR** pour l'itération rapide
 
-### Règle empirique qu'on teste
-
-> **DOM/CSS tant que tu peux, Canvas dès que tu dois.** Dès qu'il y a du vrai temps réel, de la physique, ou beaucoup d'entités à l'écran → bascule sur canvas/WebGL.
-
 ---
 
-## 🎮 anti-scroll — premier check « UI de jeu »
+## anti-scroll
 
-Mon premier jeu web, codé en ~1h30. Pas allé au bout de la boucle addictive — c'était un test pour valider qu'on peut livrer une UI vraiment pro avec Claude Code. Faux iPhone, un PNJ scrolle un feed TikTok-like tout seul, le joueur déclenche notifs/appels/messages pour le faire lâcher.
+Premier prototype, réalisé en environ 1 h 30. Son objectif était de vérifier qu'il est possible de livrer une interface soignée avec Claude Code, dans le temps contraint d'un hackathon. La boucle de gameplay n'a pas été poussée à maturité.
 
-**Leçon** : UI-only 2D = stack webapp classique suffit largement. Pas de canvas nécessaire quand c'est surtout des déclenchements d'animations.
+Concept : un smartphone fictif sur lequel un PNJ scrolle seul un feed de type TikTok. Le joueur ne peut pas interagir avec le feed mais dispose d'une palette d'outils (notifications, appels, messages) pour interrompre le scroll.
+
+Enseignement : une UI 2D dominée par des animations déclenchées peut être livrée avec une stack web standard, sans recours au canvas.
 
 ```bash
-cd anti-scroll && npm install && npm run dev
+cd anti-scroll
+npm install
+npm run dev
 ```
 
----
+## games-skill
 
-## 🧪 games-skill — terrain d'expérimentation principal
+Dossier principal d'expérimentation pour la suite. Y seront traitées les itérations suivantes :
 
-C'est **ici qu'on va faire des dingueries**. À partir de maintenant je teste :
+- Phaser 3 sur un 2D plus ambitieux (plateformer, shoot'em up)
+- Three.js sur un prototype 3D
+- Intégration de Playwright MCP et chrome-devtools-mcp
+- Utilisation de la skill `game-creator`
 
-- **Phaser 3** pour un 2D plus ambitieux (plateformer, shoot'em up)
-- **Three.js** pour toucher du 3D
-- Intégration **Playwright MCP / chrome-devtools-mcp** pour la boucle de feedback visuelle
-- Skill **game-creator** pour accélérer le scaffold
+Finalité : disposer, avant le hackathon, d'une cartographie exploitable associant type de jeu, stack recommandée, outillage, et pièges courants.
 
-Chaque essai y atterrit comme une note ou un mini-projet. Le but : avant le jour J du hackathon, savoir **quelle stack prendre selon le concept**, les doigts dans le nez.
+## HexGL
 
----
-
-## 🏎️ HexGL — bot autonome
-
-Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL) (Wipeout-like WebGL). On a codé **un bot capable de jouer tout seul** et **créé un circuit custom** pour le tester. Utile pour explorer le pilotage d'un jeu existant par un agent.
+Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL), jeu de course de type Wipeout en WebGL. Ajouts : un bot autonome capable de jouer seul (`tools/benchmark-ai.js`) et un circuit personnalisé. Cas d'usage : pilotage automatisé d'un jeu existant par un agent.
 
 ```bash
 cd HexGL
-npm install                             # playwright pour le bot
+npm install                      # dépendances Playwright pour le bot
 
-# jeu normal (ouvre http://localhost:8000)
+# Exécution manuelle (http://localhost:8000)
 python3 -m http.server 8000
 
-# bot en streaming (lance + capture console + screenshots)
-node tools/benchmark-ai.js              # N runs auto-pilotés
-node tools/capture-console.js           # run + stream des logs console
+# Exécution du bot
+node tools/benchmark-ai.js       # plusieurs runs auto-pilotés
+node tools/capture-console.js    # run instrumenté avec capture console
 ```
 
----
+## Sketchbook
 
-## 🛹 Sketchbook — sandbox 3D réservée
-
-Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook) (Three.js + cannon.js : personnages, véhicules, avions, physique). Pas utilisé à fond — gardé comme **base potentiellement utile** si un concept 3D ambitieux émerge au hackathon, toute la plomberie physique + scène est déjà en place.
+Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook), sandbox Three.js + cannon.js (personnages, véhicules, avions, physique). Conservé comme base réutilisable pour un éventuel concept 3D : la plomberie scène et physique est déjà en place.
 
 ```bash
 cd Sketchbook
@@ -89,14 +83,14 @@ npm run dev
 
 ```
 games/
-├── anti-scroll/     ← 1er check UI, stack webapp classique
-├── games-skill/     ← terrain principal d'expérimentation (Phaser, Three.js, MCP…)
-├── HexGL/           ← fork + bot + circuit custom
-└── Sketchbook/      ← fork Three.js, sandbox 3D en réserve
+├── anti-scroll/    UI 2D, stack web standard
+├── games-skill/    expérimentations principales (Phaser, Three.js, MCP)
+├── HexGL/          fork + bot + circuit personnalisé
+└── Sketchbook/     fork Three.js, sandbox 3D réservée
 ```
 
-## Crédits
+## Crédits et licences
 
 - HexGL © [Thibaut Despoulain (BKcore)](https://github.com/BKcore) — MIT
 - Sketchbook © [swift502](https://github.com/swift502) — MIT
-- OpenMoji — CC BY-SA 4.0
+- Assets main (anti-scroll) : [OpenMoji](https://openmoji.org) — CC BY-SA 4.0
