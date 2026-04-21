@@ -100,10 +100,11 @@ export function drawAlien(ctx: CanvasRenderingContext2D, a: AlienState, now: num
   ctx.translate(0, -phaseAbs * 6);
   ctx.rotate(wave * 0.05 - (a.posing ? 0.3 : 0));
 
-  // Torse : plus trapu, part plus bas pour mieux voir les bras
+  // Torse : court. Attention lineCap='round' ajoute ~lineWidth/2 de cap à chaque bout,
+  // donc moveTo plus haut pour que le bas arrive juste au niveau du rim (~y=-20).
   ctx.beginPath();
-  ctx.moveTo(0, -5);
-  ctx.lineTo(0, -55);
+  ctx.moveTo(0, -48);
+  ctx.lineTo(0, -62);
   ctx.lineWidth = 56;
   ctx.strokeStyle = '#000';
   ctx.stroke();
@@ -111,9 +112,9 @@ export function drawAlien(ctx: CanvasRenderingContext2D, a: AlienState, now: num
   ctx.strokeStyle = a.skin;
   ctx.stroke();
 
-  // Bras partant du torse (plus bas pour être visibles à côté de la tête)
+  // Bras partant du haut du torse (visibles au-dessus du rim de la soucoupe)
   ctx.save();
-  ctx.translate(0, -10);
+  ctx.translate(0, -35);
   drawArm(ctx, 1, a.posing ? -30 : 10 + phaseAbs * 10, phaseAbs, a.air, wave, a.posing);
   drawArm(ctx, -1, 0, phaseAbs, a.air, wave, a.posing);
   ctx.restore();
@@ -160,47 +161,93 @@ export function drawAlien(ctx: CanvasRenderingContext2D, a: AlienState, now: num
   ctx.restore();
 }
 
-// Soucoupe « véhicule » sous l'alien, inspirée du bateau de Coup Ahoo mais sans voiles.
-// À dessiner APRÈS les jambes ou AVANT selon z-order voulu ; ici version simple
-// qu'on appelle avant drawAlien pour que l'alien soit posé dessus.
-export function drawSaucer(ctx: CanvasRenderingContext2D, now: number, hpFrac: number): void {
+// Soucoupe asymétrique : bol bombé vers le bas (volume), rim plat en haut (alien visible).
+// Rendu en 2 passes pour l'illusion d'être « dedans » :
+//   1. drawSaucerShadow() AVANT l'alien (ombre/halo au sol, derrière)
+//   2. drawAlien()
+//   3. drawSaucerBowl() APRÈS l'alien (coque bombée qui cache le bas du corps)
+
+export function drawSaucerShadow(ctx: CanvasRenderingContext2D, now: number): void {
+  const glow = 0.5 + 0.5 * Math.sin(now * 0.008);
+  // Ombre au sol
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(0, 70, 115, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // Halo lumineux sous la soucoupe
+  ctx.save();
+  ctx.globalAlpha = 0.25 + 0.15 * glow;
+  ctx.fillStyle = '#9be8ff';
+  ctx.beginPath();
+  ctx.ellipse(0, 55, 105, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+export function drawSaucerBowl(ctx: CanvasRenderingContext2D, now: number, hpFrac: number): void {
   const bob = Math.sin(now * 0.002) * 4;
   const shake = (1 - hpFrac) * Math.sin(now * 0.04) * 3;
+  const glow = 0.5 + 0.5 * Math.sin(now * 0.008);
 
   ctx.save();
   ctx.translate(shake, bob);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // Halo lumineux sous la soucoupe
-  const glow = 0.5 + 0.5 * Math.sin(now * 0.008);
-  ctx.save();
-  ctx.globalAlpha = 0.2 + 0.15 * glow;
-  ctx.fillStyle = '#9be8ff';
-  ctx.beginPath();
-  ctx.ellipse(0, 40, 100, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  // Corps de la soucoupe : ellipse plate, stacked strokes
+  // ===== Bol bombé (demi-sphère vers le bas) =====
+  // Contour : ligne supérieure quasi-droite (rim à y=-15), puis arc vers le bas
+  // pour créer un bol profond, puis remonte.
   ctx.lineWidth = 10;
   ctx.strokeStyle = '#000';
   ctx.fillStyle = '#8a95a8';
+
   ctx.beginPath();
-  ctx.ellipse(0, 30, 100, 22, 0, 0, Math.PI * 2);
+  ctx.moveTo(-95, -15);
+  // bord gauche : plonge en courbe vers le bas du bol
+  ctx.quadraticCurveTo(-105, 20, -70, 50);
+  // fond du bol (demi-cercle vers le bas)
+  ctx.quadraticCurveTo(0, 70, 70, 50);
+  // bord droit : remonte
+  ctx.quadraticCurveTo(105, 20, 95, -15);
+  // dessus du bol : rim elliptique (moitié inférieure d'une ellipse)
+  ctx.bezierCurveTo(95, -5, -95, -5, -95, -15);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
 
-  // Bande centrale plus claire
-  ctx.fillStyle = '#b8c4d4';
+  // Petit reflet léger sur le flanc gauche du bol (ligne fine, pas de tache)
+  ctx.strokeStyle = 'rgba(220, 230, 245, 0.6)';
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.ellipse(0, 24, 95, 6, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(-80, 5);
+  ctx.quadraticCurveTo(-90, 30, -55, 48);
+  ctx.stroke();
 
-  // Lumières sous la soucoupe (hublots)
+  // ===== Rim : bande métallique fine mais masquante (va du haut du bol à la taille) =====
+  // Va de y=-20 à y=-5, couvre tout gap avec le torse
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#000';
+  ctx.fillStyle = '#8a95a8';
+  ctx.beginPath();
+  ctx.ellipse(0, -12, 95, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Tranche supérieure plus claire (reflet lumière du haut)
+  ctx.strokeStyle = '#c8d2e0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, -15, 92, 6, 0, Math.PI, Math.PI * 2);
+  ctx.stroke();
+
+  // ===== Hublots lumineux sur le flanc du bol =====
   for (let i = -2; i <= 2; i++) {
+    const hx = i * 32;
+    const hy = 25 + Math.abs(i) * 3; // léger arc pour suivre la courbure du bol
     ctx.beginPath();
-    ctx.arc(i * 30, 40, 5 + glow * 1.5, 0, Math.PI * 2);
+    ctx.arc(hx, hy, 6 + glow * 1.5, 0, Math.PI * 2);
     ctx.fillStyle = '#ffe86a';
     ctx.fill();
     ctx.lineWidth = 3;
@@ -210,3 +257,4 @@ export function drawSaucer(ctx: CanvasRenderingContext2D, now: number, hpFrac: n
 
   ctx.restore();
 }
+

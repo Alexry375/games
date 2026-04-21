@@ -2,7 +2,7 @@
 // Activé via ?showcase=1 dans main.ts. Pas de gameplay, juste une boucle de rendu
 // pour itérer sur l'UI character par screenshots.
 
-import { createAlien, drawAlien, drawSaucer, updateAlien } from './render/parts/alien';
+import { createAlien, drawAlien, drawSaucerBowl, drawSaucerShadow, updateAlien } from './render/parts/alien';
 
 export function runShowcase(canvas: HTMLCanvasElement): void {
   const ctx = canvas.getContext('2d')!;
@@ -39,8 +39,9 @@ export function runShowcase(canvas: HTMLCanvasElement): void {
     ctx.save();
     ctx.translate(vp.w / 2, vp.h * 0.75);
     ctx.scale(2.4, 2.4);
-    drawSaucer(ctx, now, 1.0);
+    drawSaucerShadow(ctx, now);
     drawAlien(ctx, alien, now);
+    drawSaucerBowl(ctx, now, 1.0);
     ctx.restore();
 
     requestAnimationFrame(frame);
