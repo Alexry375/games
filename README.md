@@ -3,7 +3,7 @@
 Hackathon **Voodoo × Anthropic** (Paris, 25–26 avril 2026).
 Collaborateurs : [@Alexry375](https://github.com/Alexry375), [@DanielMbouyou](https://github.com/DanielMbouyou).
 
-![alien-abduct v2](games-skill/RESSOURCES/Capture%20d%E2%80%99e%CC%81cran%20du%202026-04-21%2022-08-07.png)
+![alien-abduct v2](games-skill/RESSOURCES/alien-abduct-v2.png)
 
 ## Stack & méthode
 
