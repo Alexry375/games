@@ -107,12 +107,20 @@ function frame(now: number) {
       state = { ...state, phase: 'WaveCleared' };
       phaseDelayEnd = now + ANIM_DURATIONS.waveCleared;
     } else {
-      state = { ...state, phase: 'EnemyTurn' };
-      const { state: s2, anims } = resolveEnemyTurn(state);
+      const { state: s2, anims } = resolveEnemyTurn({ ...state, phase: 'EnemyTurn' });
       pushFeelFromAnims(anims);
-      state = s2;
+      state = { ...s2, phase: 'EnemyTurn' };
       queue.enqueue(anims);
-      state = { ...state, phase: 'Resolving' };
+    }
+  } else if (state.phase === 'EnemyTurn' && queue.isEmpty) {
+    if (state.ufo.hp <= 0) {
+      state = { ...state, phase: 'Defeat' };
+      SFX.defeat();
+    } else if (state.mobs.length === 0) {
+      state = { ...state, phase: 'WaveCleared' };
+      phaseDelayEnd = now + ANIM_DURATIONS.waveCleared;
+    } else {
+      state = { ...state, phase: 'PlayerTurn' };
     }
   } else if (state.phase === 'WaveCleared' && now > phaseDelayEnd) {
     const next = state.waveIndex + 1;

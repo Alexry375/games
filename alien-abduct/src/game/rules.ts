@@ -44,7 +44,7 @@ export const ARC = {
   centerXRel: 0.5,
   centerYRel: 2.5,      // centre sous l'écran → courbure douce
   radiusRel: 2.2,       // relatif à la hauteur écran
-  spanRad: Math.PI / 4, // ~45° d'arc visible (étalé -spanRad/2..+spanRad/2)
+  spanRad: Math.PI / 10, // ~18° — mobs bien à l'intérieur du viewport 16:9
 };
 
 export const ANIM_DURATIONS = {
