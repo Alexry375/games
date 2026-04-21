@@ -1,3 +1,5 @@
+import { drawScene } from './render/scene';
+
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
@@ -10,12 +12,10 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+const vp = () => ({ w: window.innerWidth, h: window.innerHeight });
+
 function frame(t: number) {
-  ctx.fillStyle = '#0a0a1a';
-  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-  ctx.fillStyle = '#fff';
-  ctx.font = '20px system-ui';
-  ctx.fillText(`alien-abduct boot t=${Math.floor(t)}`, 20, 40);
+  drawScene(ctx, vp(), t);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
