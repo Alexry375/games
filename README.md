@@ -25,8 +25,29 @@ La recette est détaillée dans [`games-skill/references-jeux-hackathon.md`](./g
 
 Jeu de combat tour-par-tour : un UFO hero défend une planète contre des vagues d'ennemis. État actuel :
 
-- **v0** (tag `alien-abduct-v0`, merge `3b6c45d`) : gameplay fonctionnel (5 vagues, 6 types de mobs, 37 tests verts, ~350 lignes de logique pure).
-- **v1** (branche `feat/alien-abduct-v1`, mergée) : refonte visuelle complète inspirée de coup-ahoo. Alien + soucoupe asymétrique, mob goomba cyclope, planète cartoon avec continents organiques, background animé (parallax stars + nébuleuses + ceinture d'astéroïdes). Visible en showcase mode, pas encore intégré dans le gameplay live.
+- **v0** (tag `alien-abduct-v0`, commit `3b6c45d`) : gameplay fonctionnel mais visuel brut (5 vagues, 6 types de mobs, 37 tests verts, ~350 lignes de logique pure). Grey saucer, créatures génériques, planète verte uniforme, starfield statique.
+- **v1** (tag `alien-abduct-v1`, commit `281931a`) : les 5 modules visuels "next level" (alien + soucoupe asymétrique, mob goomba cyclope, planète cartoon avec continents, background animé parallax + astéroïdes, armes bazooka/plasma) créés via la méthodo ci-dessous. Visibles **uniquement en showcase mode** (`?showcase=…`). Le jeu live reste en visuel v0.
+- **v2** (tag `alien-abduct-v2`, merge `4aea566`, HEAD actuel de `main`) : intégration des assets v1 dans le pipeline de rendu live. La home `/` montre maintenant le jeu en v1 visuel. Ajoute palette par vague (WAVE_PALETTES), hit-zones mobs recalibrées pour le nouveau corps goomba, source de vérité unique `WEAPON_SPECS` pour que l'arme tenue par un mob matche exactement l'icône HUD qu'il drop.
+
+### Comment on est passé de v0 à v1 → v2
+
+Le saut visuel est entièrement dû à la **boucle itérative guidée par screenshots**, pas à un meilleur modèle ou à une génération one-shot.
+
+Recette effectivement appliquée à chaque perso (alien, mob, planète, background, armes) :
+
+1. **Spec grossière** — décrire en 2-3 phrases ce qu'on veut ("mob cyclope trapu, toujours énervé, posé sur le bord d'une planète, lisible de loin"). Pas de mood board détaillé.
+2. **Première passe** via référence MIT (coup-ahoo) — porter les techniques : stacked strokes (noir épais + couleur plus fine), `quadraticCurveTo` pour courbes organiques, face composable via `globalCompositeOperation='multiply'`, palette sinusoïdale pour continents.
+3. **Showcase mode** (`?showcase=mob`, `?showcase=planet`, `?showcase=bg`, `?showcase=1`) — route dédiée qui affiche UN asset en grand sur fond uni. Permet d'itérer sans le bruit du gameplay.
+4. **Playwright screenshot → critique honnête → fix ciblé**. Le critère : "est-ce que ça ressemble à un jeu pro ?" Réponse nuancée, 2-3 défauts concrets cités. Sans voir le rendu, le modèle hallucine : "les crocs se mélangent au visage", "les antennes ressemblent à des pinces", "le violet du continent est plus clair que le fond → effet tache laiteuse".
+5. Fix → commit → screenshot → recritique. 3 à 5 itérations par perso suffisent. Exemples réels rencontrés dans ce projet :
+   - Mob v0 : crabe à 4 bras indistinct → mob goomba cyclope avec bouche-zigzag + sourcil angry (3 itérations).
+   - Planète v0 : blobs polygonaux visibles → radii modulées par 2 sinusoïdes + midpoints-as-anchors smoothing (2 itérations après "je vois des angles").
+   - Background v0 : wave clouds qui devenaient des grosses bulles rondes → remplacement par ceinture d'astéroïdes 3 couches parallax (pivot complet après retour "première fois que je suis déçu").
+   - Armes v0 : petits guns noirs anonymes → bazooka mécanique rouge + sceptre plasma organique violet/cyan (1 itération).
+
+**Le vrai multiplicateur** : la boucle "code → screenshot → critique nommée → fix ciblé". Sans le screenshot, le modèle ne peut pas corriger ce qu'il ne voit pas.
+
+**La démystification honnête** est détaillée dans [`games-skill/references-jeux-hackathon.md`](./games-skill/references-jeux-hackathon.md) (section "Pourquoi ça marche — démystification honnête") : template-stealing depuis référence MIT + recombinaison d'archétypes + feedback-loop Playwright = ~80 % de ce qui ressemble à "une bonne direction artistique".
 
 ```bash
 cd alien-abduct
@@ -37,11 +58,13 @@ npm test            # suite Vitest
 
 URLs utiles pendant le dev :
 
-- `http://localhost:5173/` — jeu live (v0)
+- `http://localhost:5173/` — jeu live (v2 : assets v1 intégrés, palette par vague)
 - `http://localhost:5173/?showcase=1` — alien + soucoupe
-- `http://localhost:5173/?showcase=mob` — goomba (4 variantes)
+- `http://localhost:5173/?showcase=mob` — goomba (4 variantes) + armes v1
 - `http://localhost:5173/?showcase=planet` — planète (5 palettes)
 - `http://localhost:5173/?showcase=bg` — background animé (5 palettes, click = cycle)
+
+Pour revenir à un état antérieur : `git checkout alien-abduct-v0` ou `alien-abduct-v1` (les tags pointent sur les merges correspondants).
 
 ## Prototypes antérieurs
 
