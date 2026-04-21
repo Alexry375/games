@@ -5,6 +5,7 @@
 
 import { createAlien, drawAlien, drawSaucerBowl, drawSaucerShadow, updateAlien } from './render/parts/alien';
 import { createMob, drawMob, updateMob, type MobState } from './render/parts/mob';
+import { createWeapon, drawWeapon, updateWeapon, type WeaponKind, type WeaponState } from './render/parts/weapon';
 import { createPlanet, drawPlanet, drawStars, PLANET_PALETTES, updatePlanet, type PlanetState } from './render/parts/planet';
 import { BG_PALETTES, createBackground, drawBackground, updateBackground, type BgState } from './render/parts/background';
 
@@ -133,22 +134,27 @@ function runHeroShowcase(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2
 }
 
 function runMobShowcase(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
-  // 4 mobs avec variations de couleur pour voir la richesse
-  const mobs: Array<{ m: MobState; x: number; scale: number }> = [
-    { m: createMob(), x: 0.25, scale: 2.8 },
-    { m: createMob({ skin: '#a03030', belly: '#d35555', hornColor: '#5a0d0d' }), x: 0.45, scale: 2.8 },
-    { m: createMob({ skin: '#2a8a5a', belly: '#4fbf82', hornColor: '#103d26' }), x: 0.65, scale: 2.8 },
-    { m: createMob({ skin: '#c28a20', belly: '#e5b855', hornColor: '#5a3d0a', eyeColor: '#ffefc2' }), x: 0.85, scale: 2.8 },
+  // 4 mobs × 2 types d'armes alternés
+  const kinds: WeaponKind[] = ['bazooka', 'plasma-staff', 'bazooka', 'plasma-staff'];
+  const mobs: Array<{ m: MobState; w: WeaponState; x: number; scale: number }> = [
+    { m: createMob(), w: createWeapon(kinds[0]), x: 0.17, scale: 2.4 },
+    { m: createMob({ skin: '#a03030', belly: '#d35555', hornColor: '#5a0d0d' }), w: createWeapon(kinds[1]), x: 0.39, scale: 2.4 },
+    { m: createMob({ skin: '#2a8a5a', belly: '#4fbf82', hornColor: '#103d26' }), w: createWeapon(kinds[2]), x: 0.61, scale: 2.4 },
+    { m: createMob({ skin: '#c28a20', belly: '#e5b855', hornColor: '#5a3d0a', eyeColor: '#ffefc2' }), w: createWeapon(kinds[3]), x: 0.83, scale: 2.4 },
   ];
-  // Un gros au centre, grande échelle, pour analyser les détails
-  const bigMob = createMob();
+  // 2 gros au centre, un avec chaque arme, pour voir le détail
+  const bigMobBazooka = createMob();
+  const bigWeaponBazooka = createWeapon('bazooka');
+  const bigMobPlasma = createMob({ skin: '#6a2a8a', belly: '#a04fbf', hornColor: '#3a0d5a' });
+  const bigWeaponPlasma = createWeapon('plasma-staff');
   let last = performance.now();
 
   function frame(now: number) {
     const dt = Math.min(50, now - last);
     last = now;
-    for (const { m } of mobs) updateMob(m, now, dt);
-    updateMob(bigMob, now, dt);
+    for (const { m, w } of mobs) { updateMob(m, now, dt); updateWeapon(w, now); }
+    updateMob(bigMobBazooka, now, dt); updateWeapon(bigWeaponBazooka, now);
+    updateMob(bigMobPlasma, now, dt); updateWeapon(bigWeaponPlasma, now);
 
     const vp = { w: window.innerWidth, h: window.innerHeight };
     ctx.fillStyle = '#0a0a16';
@@ -157,25 +163,45 @@ function runMobShowcase(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D
     ctx.fillStyle = '#666';
     ctx.font = '14px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('SHOWCASE MOB — goomba alien, 4 variantes + gros plan', vp.w / 2, 28);
+    ctx.fillText('SHOWCASE MOB — goomba + 2 armes (bazooka / bâton plasma)', vp.w / 2, 28);
 
-    // Gros plan en haut (échelle 4×)
-    ctx.save();
-    ctx.translate(vp.w / 2, vp.h * 0.38);
-    ctx.scale(4.5, 4.5);
-    drawMob(ctx, bigMob, now);
-    ctx.restore();
+    // Gros plan : bazooka à gauche, plasma à droite
+    drawMobWithWeapon(ctx, bigMobBazooka, bigWeaponBazooka, 'bazooka', vp.w * 0.30, vp.h * 0.4, 4.0, now);
+    drawMobWithWeapon(ctx, bigMobPlasma, bigWeaponPlasma, 'plasma-staff', vp.w * 0.70, vp.h * 0.4, 4.0, now);
 
-    // Ligne de variantes en bas
-    for (const { m, x, scale } of mobs) {
-      ctx.save();
-      ctx.translate(vp.w * x, vp.h * 0.82);
-      ctx.scale(scale, scale);
-      drawMob(ctx, m, now);
-      ctx.restore();
+    // Ligne de variantes en bas (4 mobs armés)
+    for (const { m, w, x, scale } of mobs) {
+      drawMobWithWeapon(ctx, m, w, w.kind, vp.w * x, vp.h * 0.84, scale, now);
     }
 
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+
+// Dessine un mob à (cx, cy) avec son arme en main droite (bras droit du mob).
+// Le bras droit du mob est en (32, 20) à scale 1 → on ancre l'arme là.
+function drawMobWithWeapon(
+  ctx: CanvasRenderingContext2D,
+  m: MobState, w: WeaponState, kind: WeaponKind,
+  cx: number, cy: number, scale: number, now: number,
+): void {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  drawMob(ctx, m, now);
+  // Position main droite : sortie du bras à ~(32-44, 20)
+  ctx.save();
+  if (kind === 'bazooka') {
+    // Bazooka : décalé franchement à droite du mob, pointant horizontal
+    ctx.translate(50, 12);
+    ctx.rotate(-0.05);
+  } else {
+    // Plasma staff : ancré main droite, l'orbe dépasse haut-droite
+    ctx.translate(44, 26);
+    ctx.rotate(0.1);
+  }
+  drawWeapon(ctx, w);
+  ctx.restore();
+  ctx.restore();
 }
