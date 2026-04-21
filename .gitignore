@@ -20,3 +20,12 @@ HexGL/package.zip
 HexGL/tools/ai-t*.png
 
 .worktrees/
+
+# External game clones (study only, not tracked as submodules)
+coup-ahoo/
+suroi/
+westward/
+
+# Large binary playtest artifacts
+HexGL/tools/recordings/
+HexGL/tools/hexastar-screenshot.png
