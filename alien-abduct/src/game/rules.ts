@@ -39,6 +39,18 @@ export const MOB_TO_WEAPON: Record<MobKind, WeaponKind> = {
   bomber: 'bomb',
 };
 
+// Mapping v1 (2 archétypes visuels) utilisé pour le rendu des mobs en jeu.
+// Mécaniques : bazooka = gros mob costaud/lourd ; plasma = mob rapide/magique.
+export type MobV1WeaponKind = 'bazooka' | 'plasma-staff';
+export const MOB_TO_V1_WEAPON: Record<MobKind, MobV1WeaponKind> = {
+  grunt: 'plasma-staff',
+  brute: 'bazooka',
+  sniper: 'plasma-staff',
+  gunner: 'bazooka',
+  medic: 'plasma-staff',
+  bomber: 'bazooka',
+};
+
 export const ARC = {
   // Planète entièrement visible, centrée sur la moitié droite de l'écran.
   centerXRel: 0.72,
