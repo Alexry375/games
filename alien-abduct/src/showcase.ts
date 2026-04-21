@@ -6,6 +6,7 @@
 import { createAlien, drawAlien, drawSaucerBowl, drawSaucerShadow, updateAlien } from './render/parts/alien';
 import { createMob, drawMob, updateMob, type MobState } from './render/parts/mob';
 import { createPlanet, drawPlanet, drawStars, PLANET_PALETTES, updatePlanet, type PlanetState } from './render/parts/planet';
+import { BG_PALETTES, createBackground, drawBackground, updateBackground, type BgState } from './render/parts/background';
 
 export function runShowcase(canvas: HTMLCanvasElement): void {
   const ctx = canvas.getContext('2d')!;
@@ -20,9 +21,39 @@ export function runShowcase(canvas: HTMLCanvasElement): void {
     runMobShowcase(canvas, ctx);
   } else if (mode === 'planet') {
     runPlanetShowcase(canvas, ctx);
+  } else if (mode === 'bg') {
+    runBgShowcase(canvas, ctx);
   } else {
     runHeroShowcase(canvas, ctx);
   }
+}
+
+function runBgShowcase(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
+  let paletteIdx = 2; // violette par défaut
+  let bg: BgState = createBackground(BG_PALETTES[paletteIdx], window.innerWidth, window.innerHeight);
+  let last = performance.now();
+
+  // Click pour cycler les palettes
+  canvas.addEventListener('pointerdown', () => {
+    paletteIdx = (paletteIdx + 1) % BG_PALETTES.length;
+    bg = createBackground(BG_PALETTES[paletteIdx], window.innerWidth, window.innerHeight);
+  });
+
+  function frame(now: number) {
+    const dt = Math.min(50, now - last);
+    last = now;
+    const vp = { w: window.innerWidth, h: window.innerHeight };
+    updateBackground(bg, now, dt, vp);
+    drawBackground(ctx, bg, now, vp);
+
+    ctx.fillStyle = '#fffc';
+    ctx.font = '14px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`SHOWCASE BG — palette ${paletteIdx + 1}/${BG_PALETTES.length} (click pour changer)`, vp.w / 2, 28);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 }
 
 function runPlanetShowcase(_canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
