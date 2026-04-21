@@ -1,5 +1,6 @@
 import { createInitialState, spawnWave } from './game/state';
 import { render } from './render/renderer';
+import { startBgm } from './audio/bgm';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -12,6 +13,7 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 resize();
+canvas.addEventListener('pointerdown', () => startBgm(), { once: true });
 
 const vp = () => ({ w: window.innerWidth, h: window.innerHeight });
 
