@@ -39,16 +39,25 @@ export const MOB_TO_WEAPON: Record<MobKind, WeaponKind> = {
   bomber: 'bomb',
 };
 
-// Mapping v1 (2 archétypes visuels) utilisé pour le rendu des mobs en jeu.
-// Mécaniques : bazooka = gros mob costaud/lourd ; plasma = mob rapide/magique.
+// Silhouette v1 d'une arme v0. Doit rester aligné avec HUD_SPECS dans
+// render/weapon.ts : c'est la MÊME silhouette visuelle qu'on verra dans le
+// HUD après avoir abducté ce mob, pour zéro ambiguïté au joueur.
 export type MobV1WeaponKind = 'bazooka' | 'plasma-staff';
+const V0_WEAPON_TO_V1_SHAPE: Record<WeaponKind, MobV1WeaponKind> = {
+  pistol: 'bazooka',
+  cannon: 'bazooka',
+  smg: 'bazooka',
+  pierce: 'plasma-staff',
+  heal: 'plasma-staff',
+  bomb: 'plasma-staff',
+};
 export const MOB_TO_V1_WEAPON: Record<MobKind, MobV1WeaponKind> = {
-  grunt: 'plasma-staff',
-  brute: 'bazooka',
-  sniper: 'plasma-staff',
-  gunner: 'bazooka',
-  medic: 'plasma-staff',
-  bomber: 'bazooka',
+  grunt: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.grunt],
+  brute: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.brute],
+  sniper: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.sniper],
+  gunner: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.gunner],
+  medic: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.medic],
+  bomber: V0_WEAPON_TO_V1_SHAPE[MOB_TO_WEAPON.bomber],
 };
 
 export const ARC = {

@@ -3,7 +3,8 @@ import { drawScene } from './scene';
 import { drawUFO } from './ufo';
 import { drawHud } from './hud';
 import { MOB_CONFIGS } from './mob-configs';
-import { MOB_TO_V1_WEAPON, type MobV1WeaponKind } from '../game/rules';
+import { MOB_TO_WEAPON, type MobV1WeaponKind } from '../game/rules';
+import { WEAPON_SPECS } from './weapon';
 import { mobPosition, type Viewport } from './layout';
 import { createMob, drawMob, updateMob, type MobState } from './parts/mob';
 import { createWeapon, drawWeapon, updateWeapon, type WeaponState } from './parts/weapon';
@@ -26,11 +27,11 @@ function entryFor(m: Mob, waveIndex: number): MobRenderEntry {
   const existing = mobRenderCache.get(m.id);
   if (existing) return existing;
   const colors = mobColorsForKindAndWave(m.kind, waveIndex);
-  const kind = MOB_TO_V1_WEAPON[m.kind];
+  const spec = WEAPON_SPECS[MOB_TO_WEAPON[m.kind]];
   const entry: MobRenderEntry = {
     mob: createMob(colors),
-    weapon: createWeapon(kind),
-    kind,
+    weapon: createWeapon(spec.kind, { primary: spec.primary, secondary: spec.secondary, accent: spec.accent }),
+    kind: spec.kind,
   };
   mobRenderCache.set(m.id, entry);
   return entry;
