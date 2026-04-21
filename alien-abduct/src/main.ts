@@ -1,7 +1,5 @@
-import { drawScene } from './render/scene';
-import { drawUFO } from './render/ufo';
-import { drawCreature } from './render/creature';
-import { mobPosition } from './render/layout';
+import { createInitialState, spawnWave } from './game/state';
+import { render } from './render/renderer';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -17,18 +15,11 @@ resize();
 
 const vp = () => ({ w: window.innerWidth, h: window.innerHeight });
 
+let state = spawnWave(createInitialState(), 0);
+state = { ...state, phase: 'PlayerTurn' };
+
 function frame(t: number) {
-  drawScene(ctx, vp(), t);
-  drawUFO(ctx, vp(), t, 1);
-  const m = mobPosition(vp(), 0);
-  ctx.save();
-  ctx.translate(m.x, m.y);
-  ctx.rotate(m.rot);
-  drawCreature(ctx, t, {
-    bodyColor: '#8de86a', accentColor: '#4c9a3a',
-    size: 0.9, eyeCount: 2, antennas: 2, armCount: 2, hat: 'none', weapon: 'pistol',
-  }, 1);
-  ctx.restore();
+  render(ctx, vp(), t, state);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
