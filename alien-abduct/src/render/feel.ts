@@ -8,6 +8,14 @@ let hitstopEndT = 0;
 let popups: Popup[] = [];
 const flashes = new Map<string, number>();
 
+export function resetFeel(): void {
+  shake = 0;
+  shakeEndT = 0;
+  hitstopEndT = 0;
+  popups = [];
+  flashes.clear();
+}
+
 export function triggerShake(now: number, amp: number, durMs: number): void {
   shake = amp;
   shakeEndT = now + durMs;

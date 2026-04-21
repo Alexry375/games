@@ -23,6 +23,11 @@ type MobRenderEntry = {
 const mobRenderCache = new Map<string, MobRenderEntry>();
 let lastT = -1;
 
+export function resetRendererState(): void {
+  mobRenderCache.clear();
+  lastT = -1;
+}
+
 function entryFor(m: Mob, waveIndex: number): MobRenderEntry {
   const existing = mobRenderCache.get(m.id);
   if (existing) return existing;

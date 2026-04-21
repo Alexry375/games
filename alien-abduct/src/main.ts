@@ -1,11 +1,12 @@
 import { createInitialState, spawnWave } from './game/state';
 import { applyPlayerAction, resolveEnemyTurn } from './game/logic';
 import { AnimQueue } from './game/anim';
+import { resetIds } from './game/ids';
 import { resolveClick } from './input/input';
-import { render } from './render/renderer';
+import { render, resetRendererState } from './render/renderer';
 import { startBgm } from './audio/bgm';
 import { SFX } from './audio/sfx';
-import { applyShake, drawPopups, isHitstopped, pushPopup, triggerFlash, triggerHitstop, triggerShake } from './render/feel';
+import { applyShake, drawPopups, isHitstopped, pushPopup, resetFeel, triggerFlash, triggerHitstop, triggerShake } from './render/feel';
 import { mobPosition, ufoPosition } from './render/layout';
 import { ANIM_DURATIONS, WAVE_COUNT } from './game/rules';
 import type { GameState, AnimStep } from './game/types';
@@ -36,12 +37,14 @@ const queue = new AnimQueue();
 let lastT = performance.now();
 let phaseDelayEnd = 0;
 
-state = { ...state, phase: 'WaveIntro' };
-phaseDelayEnd = performance.now() + ANIM_DURATIONS.waveIntro;
-SFX.waveStart();
+resetRun();
 
 canvas.addEventListener('pointerdown', (e) => {
   startBgm();
+  if (state.phase === 'Defeat' || state.phase === 'Victory') {
+    resetRun();
+    return;
+  }
   if (state.phase !== 'PlayerTurn') return;
   const rect = canvas.getBoundingClientRect();
   const px = e.clientX - rect.left;
@@ -70,6 +73,25 @@ canvas.addEventListener('pointerdown', (e) => {
     state = { ...state, phase: 'Resolving' };
   }
 });
+
+window.addEventListener('keydown', (e) => {
+  if (state.phase !== 'Defeat' && state.phase !== 'Victory') return;
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  resetRun();
+});
+
+function resetRun(): void {
+  resetIds();
+  queue.clear();
+  resetFeel();
+  resetRendererState();
+  state = spawnWave(createInitialState(), 0);
+  state = { ...state, phase: 'WaveIntro', selectedSlot: null };
+  phaseDelayEnd = performance.now() + ANIM_DURATIONS.waveIntro;
+  lastT = performance.now();
+  SFX.waveStart();
+}
 
 function pushFeelFromAnims(anims: AnimStep[]): void {
   const vp = { w: window.innerWidth, h: window.innerHeight };
@@ -152,13 +174,13 @@ function frame(now: number) {
   ctx.restore();
 
   if (state.phase === 'WaveIntro') drawOverlay(`WAVE ${state.waveIndex + 1}`);
-  else if (state.phase === 'Victory') drawOverlay('VICTOIRE', '#5c5');
-  else if (state.phase === 'Defeat') drawOverlay('DÉFAITE', '#e53');
+  else if (state.phase === 'Victory') drawOverlay('VICTOIRE', '#5c5', 'Clique ou appuie sur Entree pour relancer');
+  else if (state.phase === 'Defeat') drawOverlay('DÉFAITE', '#e53', 'Clique ou appuie sur Entree pour relancer');
 
   requestAnimationFrame(frame);
 }
 
-function drawOverlay(text: string, color = '#fff') {
+function drawOverlay(text: string, color = '#fff', subtitle?: string) {
   ctx.save();
   ctx.fillStyle = '#0008';
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
@@ -166,7 +188,14 @@ function drawOverlay(text: string, color = '#fff') {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = 'bold 80px system-ui';
-  ctx.fillText(text, window.innerWidth / 2, window.innerHeight / 2);
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  ctx.fillText(text, cx, cy);
+  if (subtitle) {
+    ctx.fillStyle = '#fffc';
+    ctx.font = '24px system-ui';
+    ctx.fillText(subtitle, cx, cy + 70);
+  }
   ctx.restore();
 }
 
