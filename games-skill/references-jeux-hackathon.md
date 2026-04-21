@@ -56,6 +56,40 @@ Pour un hackathon **sans contrainte de taille** (Voodoo × Anthropic, 48h), cett
 
 **Ce qu'on jette** : `webpack.*.js`, `package.json` scripts `closure`/`roadroll*`, minification agressive. Irrelevant hors concours js13k.
 
+## 🏆 Stratégie gagnante pour créer un perso cartoon propre
+
+Validée sur Alien Abduct v1 (4 itérations, ~45 min pour arriver à un perso « Coup Ahoo-quality »). Cette méthode marche pour **tout jeu cartoon 2D** où il faut un personnage de qualité AAA-indé en peu de temps.
+
+### Les 5 étapes
+
+1. **Cloner un jeu de référence dont l'art plaît** (ex. Coup Ahoo pour cartoon kawaii).
+2. **Identifier les 2 modules character** du jeu de réf : typiquement un `face.ts` (yeux/bouche/joues) + un `body.ts` ou `dude.ts` (membres/torse). Lire en entier, repérer les techniques (stacked strokes, courbes quadratic/bézier, animation phases, blink indépendant).
+3. **Porter en style fonctionnel**, pas OOP Entity/Container — notre archi reste stateful-fonctionnelle, donc : `createFace(opts)` → state, `updateFace(state, now, dt)`, `drawFace(ctx, state)`. Pareil pour le body.
+4. **Créer un showcase mode** (`?showcase=1` dans l'URL → `runShowcase(canvas)` qui rend UN perso centré en grand sur fond uni). Permet d'itérer sur le perso sans le bruit du gameplay.
+5. **Itérer via screenshots Playwright + critique honnête**. Prendre un screenshot, regarder ce qui cloche **concrètement** (scale cassé ? proportions ? gaps ?), fixer, re-screenshot. 3-5 itérations suffisent.
+
+### Techniques Coup Ahoo à voler absolument
+
+| Technique | Où | Pourquoi |
+|---|---|---|
+| Stacked strokes (même path 2× : noir épais + couleur plus fin) | Torse, tête, membres | Silhouette épaisse lisible immédiatement |
+| Courbes `quadraticCurveTo` / `bezierCurveTo` pour tous les membres | Bras, jambes, chapeaux | Jamais de lignes droites, tout est organique |
+| Face composable (blush + yeux + bouche en primitives séparées) | `engine/face.ts` | Expressivité (angry, mouth open) avec peu de code |
+| `setTimeout` indépendant pour blink de chaque œil | `engine/eye.ts` | Donne la vie instantanément |
+| `animationSpeed = 0.005 * (0.8 + rand * 0.4)` per-entity | Constructor | Chaque mob respire à son rythme |
+| `ctx.globalCompositeOperation = 'multiply'` pour composer la face | Avant `face.draw()` | Intégration colorimétrique propre |
+
+### Pièges observés à éviter
+
+- **Copier-coller aveugle** des `ctx.scale()` du jeu de référence. Les scales sont calibrés dans le repère d'origine ; recalibrer selon ton propre scale global (sinon chapeau à ×6 cassé, cf. v1 alien-abduct).
+- **Ajouter un « cou » entre torse et tête** quand les largeurs diffèrent : crée des trous disgracieux sur les côtés. Solution : faire chevaucher tête et torse sans élément intermédiaire (comme Coup Ahoo).
+- **Halluciner que le résultat est bon** sans screenshot. Sans image, on se convainc que ça marche alors que le perso est tout cassé. **Toujours** screenshot + regarder.
+- **Ne pas faire de critique détaillée** du screenshot ("ça ressemble à un UFO avec un visage peint dessus" > "c'est bien"). Nommer les défauts précis permet de les corriger un par un.
+
+### Template de prompt pour porter un perso
+
+> Regarde `<path>/face.ts`, `<path>/body.ts` dans le jeu cloné. Porte-les en version fonctionnelle (pas Entity OOP) dans `src/render/parts/`. Crée un `showcase.ts` qui affiche le perso centré en grand sur fond noir. Ajoute `?showcase=1` dans main.ts. Screenshot via Playwright, critique honnête, itère max 5 fois.
+
 ## Bonnes pratiques Claude Code pour le hackathon 48h
 
 Retour d'expérience Alien Abduct v0 (itération #1 de préparation).
