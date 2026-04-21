@@ -35,19 +35,30 @@ export function drawScene(ctx: CanvasRenderingContext2D, vp: Viewport, t: number
 
   const { cx, cy, r } = arcCenter(vp);
   ctx.save();
-  ctx.fillStyle = '#3d5a4b';
+  // Ombre pour donner du volume : offset haut-gauche (éclairage venant de l'UFO)
+  const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+  grad.addColorStop(0, '#6ecf9b');
+  grad.addColorStop(0.6, '#3d8a5f');
+  grad.addColorStop(1, '#1f3a2a');
+  ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI * 1.5 - Math.PI / 4, Math.PI * 1.5 + Math.PI / 4, false);
-  ctx.lineTo(cx + r, vp.h + 50);
-  ctx.lineTo(cx - r, vp.h + 50);
-  ctx.closePath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
+
+  // Bordure épaisse style Coup Ahoo
   ctx.lineWidth = 6;
   ctx.strokeStyle = '#000';
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI * 1.5 - Math.PI / 4, Math.PI * 1.5 + Math.PI / 4, false);
   ctx.stroke();
+
+  // Quelques cratères/taches pour texture
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  const craters: Array<[number, number, number]> = [[0.25, -0.1, 0.18], [-0.15, 0.3, 0.12], [0.35, 0.4, 0.09], [-0.4, -0.2, 0.07]];
+  for (const [ax, ay, ar] of craters) {
+    ctx.beginPath();
+    ctx.arc(cx + ax * r, cy + ay * r, ar * r, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }

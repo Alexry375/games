@@ -11,7 +11,16 @@ import { ANIM_DURATIONS, WAVE_COUNT } from './game/rules';
 import type { GameState, AnimStep } from './game/types';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d')!;
+
+if (new URLSearchParams(location.search).has('showcase')) {
+  const { runShowcase } = await import('./showcase');
+  runShowcase(canvas);
+} else {
+  startGame();
+}
+
+function startGame() {
+  const ctx = canvas.getContext('2d')!;
 
 function resize() {
   const dpr = Math.min(window.devicePixelRatio, 2);
@@ -161,4 +170,5 @@ function drawOverlay(text: string, color = '#fff') {
   ctx.restore();
 }
 
-requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
+} // end startGame

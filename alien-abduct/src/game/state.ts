@@ -1,6 +1,6 @@
 import type { GameState, Mob, MobKind } from './types';
 import { nextId } from './ids';
-import { MOB_STATS, UFO_MAX_HP, ARC } from './rules';
+import { MOB_STATS, UFO_MAX_HP, ARC, MOB_ANGLE_CENTER } from './rules';
 import { WAVES } from './waves';
 
 export function createInitialState(): GameState {
@@ -33,7 +33,7 @@ export function spawnWave(state: GameState, waveIndex: number): GameState {
   const n = kinds.length;
   const mobs: Mob[] = kinds.map((k, i) => {
     const t = n === 1 ? 0.5 : i / (n - 1);
-    const angle = -ARC.spanRad / 2 + t * ARC.spanRad;
+    const angle = MOB_ANGLE_CENTER - ARC.spanRad / 2 + t * ARC.spanRad;
     return makeMob(k, angle);
   });
   return { ...state, waveIndex, mobs, turnNumber: 0, phase: 'WaveIntro' };

@@ -19,7 +19,7 @@ export function mobPosition(vp: Viewport, angle: number): { x: number; y: number
 }
 
 export function ufoPosition(vp: Viewport): { x: number; y: number } {
-  return { x: vp.w * 0.5, y: vp.h * 0.12 };
+  return { x: vp.w * 0.22, y: vp.h * 0.32 };
 }
 
 export function slotRect(vp: Viewport, index: 0 | 1 | 2): { x: number; y: number; w: number; h: number } {
