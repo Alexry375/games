@@ -90,6 +90,15 @@ Validée sur Alien Abduct v1 (4 itérations, ~45 min pour arriver à un perso «
 
 > Regarde `<path>/face.ts`, `<path>/body.ts` dans le jeu cloné. Porte-les en version fonctionnelle (pas Entity OOP) dans `src/render/parts/`. Crée un `showcase.ts` qui affiche le perso centré en grand sur fond noir. Ajoute `?showcase=1` dans main.ts. Screenshot via Playwright, critique honnête, itère max 5 fois.
 
+### Pourquoi ça marche — démystification honnête
+
+Une fois le hero fait, on a généralisé la recette pour **créer un mob** (goomba cyclope angry) en **2 itérations, ~15 min**. Résultat étonnamment propre. Analyse de pourquoi, pour savoir où la recette s'applique et où elle s'effondre :
+
+1. **Le « talent artistique » vient du repo de référence, pas du modèle.** Sans Coup Ahoo cloné à côté, le modèle part de zéro et produit du quelconque. Les techniques (stacked strokes, quadratic curves, silhouette-first) sont **copiées**, pas inventées.
+2. **Les designs de mobs « originaux » sont des recombinaisons d'archétypes connus.** Cyclope + crocs + cornes = Mike Wazowski + Goomba + petit diable. Le modèle excelle à recombiner des briques que le joueur reconnaît instantanément — c'est pour ça que ça "fonctionne" en 2 itérations. **Ne pas essayer de faire un perso vraiment inédit** : le modèle y est moins bon et l'itération devient longue.
+3. **Playwright screenshot = 80% du multiplicateur.** Sans voir le rendu, le modèle hallucine que c'est beau. Boucle "code → screenshot → critique honnête ciblée → fix" converge vite. **Sans cette boucle, chute énorme de qualité**.
+4. **Corollaire** : la recette est **réplicable pour tout perso cartoon 2D** tant qu'on a une référence MIT solide. Elle **s'effondre** sur : 3D, styles inédits sans référence, pixel art précis (la boucle screenshot perd en précision à basse résolution). Pour ces cas-là, partir d'un autre template, ou réduire l'ambition.
+
 ## Bonnes pratiques Claude Code pour le hackathon 48h
 
 Retour d'expérience Alien Abduct v0 (itération #1 de préparation).

@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+const page = await ctx.newPage();
+const errors = [];
+page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.text()); });
+await page.goto('http://localhost:5173/?showcase=1', { waitUntil: 'networkidle' });
+await page.waitForTimeout(800);
+await page.screenshot({ path: '/tmp/showcase-01.png' });
+await page.click('canvas');
+await page.waitForTimeout(400);
+await page.screenshot({ path: '/tmp/showcase-03-angry.png' });
+await browser.close();
+console.log('ERRORS:', errors.length ? errors.join('\n') : '(none)');
