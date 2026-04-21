@@ -1,4 +1,5 @@
 import { drawScene } from './render/scene';
+import { drawUFO } from './render/ufo';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -16,6 +17,7 @@ const vp = () => ({ w: window.innerWidth, h: window.innerHeight });
 
 function frame(t: number) {
   drawScene(ctx, vp(), t);
+  drawUFO(ctx, vp(), t, 1);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
