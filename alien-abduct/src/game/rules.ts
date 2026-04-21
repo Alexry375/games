@@ -40,12 +40,17 @@ export const MOB_TO_WEAPON: Record<MobKind, WeaponKind> = {
 };
 
 export const ARC = {
-  // centre de la planète en coord écran relative (multiplicateurs hauteur/largeur)
-  centerXRel: 0.5,
-  centerYRel: 2.5,      // centre sous l'écran → courbure douce
-  radiusRel: 2.2,       // relatif à la hauteur écran
-  spanRad: Math.PI / 10, // ~18° — mobs bien à l'intérieur du viewport 16:9
+  // Planète entièrement visible, centrée sur la moitié droite de l'écran.
+  centerXRel: 0.72,
+  centerYRel: 0.55,
+  radiusRel: 0.32,
+  // Mobs répartis sur l'hémisphère gauche de la planète, face à l'UFO.
+  spanRad: Math.PI * 0.75, // ~135°
 };
+
+// Centre angulaire des mobs (angle=0 = sommet / nord de la planète)
+// -π/2 = ouest, côté gauche, face à l'UFO.
+export const MOB_ANGLE_CENTER = -Math.PI / 2;
 
 export const ANIM_DURATIONS = {
   waveIntro: 2000,

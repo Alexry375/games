@@ -7,6 +7,7 @@ export function drawUFO(ctx: CanvasRenderingContext2D, vp: Viewport, t: number, 
 
   ctx.save();
   ctx.translate(x + shake, y + bob);
+  ctx.scale(1.5, 1.5); // premier plan : UFO plus gros
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.lineWidth = 6;
