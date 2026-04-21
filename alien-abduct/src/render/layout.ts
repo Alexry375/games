@@ -1,6 +1,12 @@
 import { ARC } from '../game/rules';
+import { MOB_CONFIGS } from './mob-configs';
+import type { MobKind } from '../game/types';
 
 export type Viewport = { w: number; h: number };
+
+// Doit matcher MOB_BASE_SCALE dans renderer.ts (le mob goomba v1 est intrinsèquement
+// petit dans son repère local, on le scale up pour la lisibilité).
+export const MOB_BASE_SCALE = 1.4;
 
 export function arcCenter(vp: Viewport): { cx: number; cy: number; r: number } {
   return {
@@ -16,6 +22,22 @@ export function mobPosition(vp: Viewport, angle: number): { x: number; y: number
   const x = cx + r * Math.sin(angle);
   const y = cy - r * Math.cos(angle);
   return { x, y, rot: angle };
+}
+
+// Cercle de détection de clic pour un mob, décalé outward de la surface de la planète
+// pour recouvrir le corps visible du goomba (qui s'étend à ~50 unités locales au-dessus
+// de son origine = pieds). Rayon scaled par kind (brute plus gros que grunt).
+export function mobHitCircle(
+  vp: Viewport, angle: number, kind: MobKind,
+): { cx: number; cy: number; r: number } {
+  const pos = mobPosition(vp, angle);
+  const scale = MOB_CONFIGS[kind].size * MOB_BASE_SCALE;
+  // Outward = vecteur de (arcCenter) vers pos, qui vaut (sin α, -cos α).
+  const outX = Math.sin(angle);
+  const outY = -Math.cos(angle);
+  // Offset de 35 unités locales outward (= centre visuel du corps goomba).
+  const offset = 35 * scale;
+  return { cx: pos.x + outX * offset, cy: pos.y + outY * offset, r: 45 * scale };
 }
 
 export function ufoPosition(vp: Viewport): { x: number; y: number } {
