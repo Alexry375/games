@@ -4,93 +4,78 @@ Dépôt de préparation pour le hackathon **Voodoo × Anthropic** (Paris, 25–2
 
 Collaborateurs : [@Alexry375](https://github.com/Alexry375), [@DanielMbouyou](https://github.com/DanielMbouyou).
 
-## Objectif
+## Stratégie retenue
 
-Ce dépôt regroupe des expérimentations visant à identifier les **stacks les plus efficaces pour développer des jeux web avec Claude Code**. Chaque sous-dossier correspond à un test ciblé. L'objectif n'est pas de livrer des jeux finis, mais de cartographier, pour chaque type de gameplay, la stack qui minimise les hallucinations du modèle et maximise la qualité du résultat.
+Après plusieurs prototypes, la stack et la méthode qui donnent les meilleurs résultats avec Claude Code ont été figées :
 
-## Stacks évaluées
+**Stack** : Vite + TypeScript strict + Canvas 2D vanilla + Vitest + ZzFX (SFX) + HTMLAudioElement (BGM). Aucun framework de jeu (pas de Phaser, pas de Three.js pour ces cas-là). Compilation sub-100ms, HMR, et le modèle génère du Canvas 2D très propre.
 
-| Type de jeu | Stack retenue | Justification |
-|---|---|---|
-| UI 2D non temps réel (animations déclenchées, logique d'état simple) | Next.js + React + Tailwind + Framer Motion (DOM/CSS) | Corpus d'entraînement massif sur le web standard ; Claude produit une UI propre rapidement. Limite : ne scale pas sur le temps réel ou les nombreuses entités. |
-| 2D ambitieux (plateformer, shoot'em up, physique, sprites) | Phaser 3 (Canvas/WebGL) | Large documentation publique ; le modèle génère du code fiable. |
-| 3D | Three.js (WebGL) | Même raison ; écosystème mature et bien documenté. |
+**Méthode** :
 
-**Heuristique retenue** : DOM/CSS par défaut, bascule sur Canvas/WebGL dès que le gameplay exige du temps réel, de la physique ou un grand nombre d'entités à l'écran.
+1. **Cloner un jeu de référence sous licence MIT** dont l'art plaît (ex. [coup-ahoo](https://github.com/anttihaavikko/coup-ahoo), js13kGames 2023).
+2. **Porter les modules character en style fonctionnel** (pas Entity/Container OOP). Typiquement `face.ts` + `dude.ts` → `createFace(opts)` / `updateFace(s, now, dt)` / `drawFace(ctx, s)`.
+3. **Créer un showcase mode** (`?showcase=1`) qui affiche UN perso en grand sur fond uni, pour itérer sur le rendu sans le bruit du gameplay.
+4. **Itérer via screenshots Playwright + critique honnête**. 3 à 5 itérations par perso. La boucle "code → screenshot → critique nommée → fix ciblé" est le vrai multiplicateur : sans voir le rendu, le modèle hallucine.
 
-## Outillage ciblé
+La recette est détaillée dans [`games-skill/references-jeux-hackathon.md`](./games-skill/references-jeux-hackathon.md) (section "Stratégie gagnante pour créer un perso cartoon propre" + démystification honnête des leviers).
 
-- **Skill `OpusGameLabs/game-creator`** pour le scaffolding initial
-- **Playwright MCP** et **chrome-devtools-mcp** pour fournir au modèle une boucle de feedback visuelle (captures d'écran, erreurs console WebGL)
-- **Vite / HMR** pour l'itération rapide
+**Pourquoi tour-par-tour pour le hackathon** : le format Anthropic invite à exploiter les LLMs dans le gameplay. Le tour-par-tour s'y prête naturellement (décisions ennemies, narration générative, dialogues) sans devoir gérer la latence des appels API en temps réel.
 
----
+## Prototype principal — alien-abduct
 
-## anti-scroll
+Jeu de combat tour-par-tour : un UFO hero défend une planète contre des vagues d'ennemis. État actuel :
 
-Premier prototype, réalisé en environ 1 h 30. Son objectif était de vérifier qu'il est possible de livrer une interface soignée avec Claude Code, dans le temps contraint d'un hackathon. La boucle de gameplay n'a pas été poussée à maturité.
-
-Concept : un smartphone fictif sur lequel un PNJ scrolle seul un feed de type TikTok. Le joueur ne peut pas interagir avec le feed mais dispose d'une palette d'outils (notifications, appels, messages) pour interrompre le scroll.
-
-Enseignement : une UI 2D dominée par des animations déclenchées peut être livrée avec une stack web standard, sans recours au canvas.
+- **v0** (tag `alien-abduct-v0`, merge `3b6c45d`) : gameplay fonctionnel (5 vagues, 6 types de mobs, 37 tests verts, ~350 lignes de logique pure).
+- **v1** (branche `feat/alien-abduct-v1`, mergée) : refonte visuelle complète inspirée de coup-ahoo. Alien + soucoupe asymétrique, mob goomba cyclope, planète cartoon avec continents organiques, background animé (parallax stars + nébuleuses + ceinture d'astéroïdes). Visible en showcase mode, pas encore intégré dans le gameplay live.
 
 ```bash
-cd anti-scroll
+cd alien-abduct
 npm install
-npm run dev
+npm run dev         # http://localhost:5173
+npm test            # suite Vitest
 ```
 
-## games-skill
+URLs utiles pendant le dev :
 
-Dossier principal d'expérimentation pour la suite. Y seront traitées les itérations suivantes :
+- `http://localhost:5173/` — jeu live (v0)
+- `http://localhost:5173/?showcase=1` — alien + soucoupe
+- `http://localhost:5173/?showcase=mob` — goomba (4 variantes)
+- `http://localhost:5173/?showcase=planet` — planète (5 palettes)
+- `http://localhost:5173/?showcase=bg` — background animé (5 palettes, click = cycle)
 
-- Phaser 3 sur un 2D plus ambitieux (plateformer, shoot'em up)
-- Three.js sur un prototype 3D
-- Intégration de Playwright MCP et chrome-devtools-mcp
-- Utilisation de la skill `game-creator`
+## Prototypes antérieurs
 
-Finalité : disposer, avant le hackathon, d'une cartographie exploitable associant type de jeu, stack recommandée, outillage, et pièges courants.
+### anti-scroll
 
-## HexGL
-
-Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL), jeu de course de type Wipeout en WebGL. Ajouts : un bot autonome capable de jouer seul (`tools/benchmark-ai.js`) et un circuit personnalisé. Cas d'usage : pilotage automatisé d'un jeu existant par un agent.
+Premier prototype, ~1h30. Smartphone fictif où un PNJ scrolle un feed TikTok ; le joueur interrompt avec notifications/appels. Enseignement validé : pour une UI 2D dominée par des animations déclenchées, une stack web standard (React + Tailwind + Framer Motion) peut suffire et cohabite bien avec Claude. Non retenue pour le hackathon — le tour-par-tour Canvas marche mieux avec la méthode "port depuis référence".
 
 ```bash
-cd HexGL
-npm install                      # dépendances Playwright pour le bot
-
-# Exécution manuelle (http://localhost:8000)
-python3 -m http.server 8000
-
-# Exécution du bot
-node tools/benchmark-ai.js       # plusieurs runs auto-pilotés
-node tools/capture-console.js    # run instrumenté avec capture console
+cd anti-scroll && npm install && npm run dev
 ```
 
-## Sketchbook
+### HexGL
 
-Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook), sandbox Three.js + cannon.js (personnages, véhicules, avions, physique). Conservé comme base réutilisable pour un éventuel concept 3D : la plomberie scène et physique est déjà en place.
+Fork de [BKcore/HexGL](https://github.com/BKcore/HexGL) (course Wipeout-like WebGL). Ajouts : bot autonome (`tools/benchmark-ai.js`) + circuit perso. Cas d'usage : pilotage automatisé d'un jeu existant par un agent. Pas notre direction pour le hackathon mais conservé comme référence.
 
-```bash
-cd Sketchbook
-npm install
-npm run dev
-```
+### Sketchbook
 
----
+Fork de [swift502/Sketchbook](https://github.com/swift502/Sketchbook), sandbox Three.js + cannon.js. Gardé comme base réutilisable si un concept 3D est demandé, mais pas la direction actuelle.
 
 ## Arborescence
 
 ```
 games/
-├── anti-scroll/    UI 2D, stack web standard
-├── games-skill/    expérimentations principales (Phaser, Three.js, MCP)
-├── HexGL/          fork + bot + circuit personnalisé
-└── Sketchbook/     fork Three.js, sandbox 3D réservée
+├── alien-abduct/     jeu tour-par-tour — prototype principal du hackathon
+├── anti-scroll/      prototype UI 2D (stack web standard)
+├── coup-ahoo/        référence MIT clonée (port inspiration)
+├── games-skill/      notes méthodo, specs, plans, références hackathon
+├── HexGL/            fork 3D + bot (scripts Playwright y vivent aussi)
+└── Sketchbook/       fork Three.js (sandbox 3D)
 ```
 
 ## Crédits et licences
 
 - HexGL © [Thibaut Despoulain (BKcore)](https://github.com/BKcore) — MIT
 - Sketchbook © [swift502](https://github.com/swift502) — MIT
+- Coup Ahoo © [Matt McKenna](https://github.com/mattvonrocketstein) / [Antti Haavikko](https://github.com/anttihaavikko) — MIT (techniques de rendu portées pour alien-abduct ; voir attribution détaillée dans `alien-abduct/README.md`)
 - Assets main (anti-scroll) : [OpenMoji](https://openmoji.org) — CC BY-SA 4.0
