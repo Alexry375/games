@@ -45,8 +45,8 @@ canvas.addEventListener('pointerdown', (e) => {
     state = { ...state, selectedSlot: null };
   } else if (res.kind === 'action') {
     const { state: newState, anims } = applyPlayerAction(state, res.action);
-    state = newState;
     pushFeelFromAnims(anims);
+    state = newState;
     queue.enqueue(anims);
     SFX.click();
     if (res.action.kind === 'abduct') SFX.abduct();
@@ -109,8 +109,8 @@ function frame(now: number) {
     } else {
       state = { ...state, phase: 'EnemyTurn' };
       const { state: s2, anims } = resolveEnemyTurn(state);
-      state = s2;
       pushFeelFromAnims(anims);
+      state = s2;
       queue.enqueue(anims);
       state = { ...state, phase: 'Resolving' };
     }
