@@ -20,39 +20,54 @@ type Streak = {
   x: number; y: number; len: number; speed: number; alpha: number;
 };
 
+type Asteroid = {
+  x: number; y: number; size: number; // rayon moyen
+  radii: number[];       // rayons polaires modulés (forme irrégulière)
+  rotation: number;
+  rotSpeed: number;      // rotation sur soi-même
+  speed: number;         // dérive horizontale
+  layer: 0 | 1 | 2;      // 0 = far (petit, lent), 2 = near (gros, rapide)
+  fill: string;
+};
+
 export type BgPalette = {
   top: string;     // gradient haut (ciel profond)
-  bottom: string;  // gradient bas (horizon nébuleux)
-  nebulaFill: string;     // fond de la bande de nébuleuse (semi-transparent)
-  nebulaStroke: string;   // contour clair de la bande (blanc ou pastel)
-  cloudColors: string[];  // 2-3 teintes pour les gas clouds
+  bottom: string;  // gradient bas
+  cloudColors: string[];    // 2-3 teintes pour les nébuleuses
+  asteroidFills: string[];  // teintes des astéroïdes (sombres, palette-themed)
+  asteroidStroke: string;   // contour clair (blanc ou pastel)
 };
 
 export const BG_PALETTES: BgPalette[] = [
   { // 1 — nuit profonde verte
     top: '#06101a', bottom: '#0e2a38',
-    nebulaFill: 'rgba(100, 230, 200, 0.28)', nebulaStroke: 'rgba(220, 255, 240, 0.85)',
     cloudColors: ['rgba(140, 230, 200, 0.22)', 'rgba(200, 255, 220, 0.18)', 'rgba(80, 180, 180, 0.20)'],
+    asteroidFills: ['#0c1820', '#15303a', '#1d4050'],
+    asteroidStroke: 'rgba(220, 255, 240, 0.95)',
   },
   { // 2 — nébuleuse orange martienne
     top: '#1a0808', bottom: '#3a1810',
-    nebulaFill: 'rgba(255, 150, 80, 0.30)', nebulaStroke: 'rgba(255, 230, 180, 0.90)',
     cloudColors: ['rgba(255, 180, 120, 0.22)', 'rgba(255, 120, 80, 0.18)', 'rgba(220, 100, 60, 0.20)'],
+    asteroidFills: ['#1a0a06', '#3a1810', '#5a2814'],
+    asteroidStroke: 'rgba(255, 230, 180, 0.95)',
   },
   { // 3 — nébuleuse violette
     top: '#0a0620', bottom: '#2a1060',
-    nebulaFill: 'rgba(180, 120, 255, 0.30)', nebulaStroke: 'rgba(240, 220, 255, 0.90)',
     cloudColors: ['rgba(200, 160, 255, 0.22)', 'rgba(255, 120, 220, 0.18)', 'rgba(120, 80, 220, 0.20)'],
+    asteroidFills: ['#0e0820', '#1d1040', '#2a1860'],
+    asteroidStroke: 'rgba(240, 220, 255, 0.95)',
   },
   { // 4 — volcanique rouge/noir
     top: '#0a0004', bottom: '#400814',
-    nebulaFill: 'rgba(255, 80, 60, 0.30)', nebulaStroke: 'rgba(255, 220, 120, 0.90)',
     cloudColors: ['rgba(255, 100, 60, 0.22)', 'rgba(255, 180, 80, 0.18)', 'rgba(180, 40, 20, 0.22)'],
+    asteroidFills: ['#0e0406', '#1e0608', '#30080a'],
+    asteroidStroke: 'rgba(255, 220, 120, 0.95)',
   },
   { // 5 — glacial bleu-blanc
     top: '#040812', bottom: '#152840',
-    nebulaFill: 'rgba(160, 220, 255, 0.28)', nebulaStroke: 'rgba(255, 255, 255, 0.90)',
     cloudColors: ['rgba(200, 230, 255, 0.25)', 'rgba(255, 255, 255, 0.18)', 'rgba(140, 180, 220, 0.22)'],
+    asteroidFills: ['#0a1220', '#18304a', '#2a4868'],
+    asteroidStroke: 'rgba(255, 255, 255, 0.95)',
   },
 ];
 
@@ -61,10 +76,9 @@ export type BgState = {
   stars: Star[];
   clouds: GasCloud[];
   streaks: Streak[];
+  asteroids: Asteroid[];
   parallaxOffset: number;
-  wave: number;     // phase lente
-  fastWave: number; // phase rapide
-  animationPhase: number; // sin lent pour pulsation globale
+  animationPhase: number;
 };
 
 function rand(min: number, max: number): number {
@@ -112,34 +126,70 @@ export function createBackground(palette: BgPalette = BG_PALETTES[2], width = 14
     alpha: rand(0.1, 0.3),
   });
 
+  // Ceinture d'astéroïdes : concentrée dans le tiers inférieur, 3 couches parallax
+  const asteroids: Asteroid[] = [];
+  const makeShape = (): number[] => {
+    const nSec = 12;
+    const radii: number[] = [];
+    const f1 = 1 + Math.floor(Math.random() * 2);
+    const f2 = 2 + Math.floor(Math.random() * 2);
+    const phi1 = Math.random() * Math.PI * 2;
+    const phi2 = Math.random() * Math.PI * 2;
+    const a1 = rand(0.15, 0.35);
+    const a2 = rand(0.08, 0.20);
+    for (let j = 0; j < nSec; j++) {
+      const ang = (j / nSec) * Math.PI * 2;
+      const r = 1 + a1 * Math.sin(f1 * ang + phi1) + a2 * Math.sin(f2 * ang + phi2);
+      radii.push(Math.max(0.5, r));
+    }
+    return radii;
+  };
+  const pickFill = (): string => palette.asteroidFills[Math.floor(Math.random() * palette.asteroidFills.length)];
+  // Couche lointaine : 18 petits, lents, dans le tiers médian-bas
+  for (let i = 0; i < 18; i++) asteroids.push({
+    x: rand(-100, width + 100), y: rand(height * 0.60, height * 0.95),
+    size: rand(8, 16), radii: makeShape(),
+    rotation: rand(0, Math.PI * 2), rotSpeed: rand(-0.00015, 0.00015),
+    speed: rand(0.15, 0.35), layer: 0, fill: pickFill(),
+  });
+  // Couche médiane : 12 moyens
+  for (let i = 0; i < 12; i++) asteroids.push({
+    x: rand(-100, width + 100), y: rand(height * 0.68, height * 0.98),
+    size: rand(18, 32), radii: makeShape(),
+    rotation: rand(0, Math.PI * 2), rotSpeed: rand(-0.0002, 0.0002),
+    speed: rand(0.4, 0.7), layer: 1, fill: pickFill(),
+  });
+  // Couche proche : 7 gros, rapides, très bas
+  for (let i = 0; i < 7; i++) asteroids.push({
+    x: rand(-100, width + 100), y: rand(height * 0.75, height * 1.02),
+    size: rand(40, 72), radii: makeShape(),
+    rotation: rand(0, Math.PI * 2), rotSpeed: rand(-0.00025, 0.00025),
+    speed: rand(0.8, 1.3), layer: 2, fill: pickFill(),
+  });
+
   return {
     palette,
     stars,
     clouds,
     streaks,
+    asteroids,
     parallaxOffset: 0,
-    wave: 0,
-    fastWave: 0,
     animationPhase: 0,
   };
 }
 
-export function updateBackground(bg: BgState, now: number, dt: number, vp: { w: number; h: number }): void {
-  bg.wave = Math.sin(now * 0.0003);
-  bg.fastWave = Math.sin(now * 0.0007);
-  bg.animationPhase = Math.sin(now * 0.001);
+export function updateBackground(bg: BgState, _now: number, dt: number, vp: { w: number; h: number }): void {
+  bg.animationPhase = Math.sin(_now * 0.001);
   bg.parallaxOffset += dt * 0.01;
 
-  // Dérive clouds
   for (const c of bg.clouds) {
     c.x -= c.speed * dt * 0.03;
     if (c.x < -300) {
       c.x = vp.w + 300 + Math.random() * 400;
-      c.y = rand(vp.h * 0.05, vp.h * 0.75);
+      c.y = rand(vp.h * 0.05, vp.h * 0.68);
     }
   }
 
-  // Dérive streaks (plus rapides)
   for (const s of bg.streaks) {
     s.x -= s.speed * dt * 0.15;
     if (s.x + s.len < -50) {
@@ -148,7 +198,17 @@ export function updateBackground(bg: BgState, now: number, dt: number, vp: { w: 
     }
   }
 
-  // Scintillement stars : pas besoin, c'est calculé au draw via twinkleSpeed/offset
+  for (const a of bg.asteroids) {
+    a.x -= a.speed * dt * 0.05;
+    a.rotation += a.rotSpeed * dt;
+    if (a.x + a.size * 2 < -50) {
+      a.x = vp.w + 50 + Math.random() * 300;
+      // Re-randomiser la Y selon la couche pour garder la distribution verticale
+      if (a.layer === 0) a.y = rand(vp.h * 0.60, vp.h * 0.95);
+      else if (a.layer === 1) a.y = rand(vp.h * 0.68, vp.h * 0.98);
+      else a.y = rand(vp.h * 0.75, vp.h * 1.02);
+    }
+  }
 }
 
 export function drawBackground(ctx: CanvasRenderingContext2D, bg: BgState, now: number, vp: { w: number; h: number }): void {
@@ -210,73 +270,45 @@ export function drawBackground(ctx: CanvasRenderingContext2D, bg: BgState, now: 
   }
   ctx.restore();
 
-  // === 5. Bande de nébuleuse qui ondule en bas (adaptation du pattern "water" de coup-ahoo) ===
-  // Fill semi-transparent + contour CLAIR (blanc/pastel, pas noir).
-  const bandHeight = vp.h * 0.28;
-  const bandTop = vp.h - bandHeight;
-  const waveAmp = 18 + 8 * Math.abs(bg.animationPhase);
+  // === 5. Ceinture d'astéroïdes (3 couches parallax, silhouettes + contour clair) ===
+  // Technique : rayons polaires modulés par 2 sinusoïdes harmoniques + lissage midpoints-as-anchors.
+  // Contour BLANC (ou pastel selon palette), fill sombre palette-themed.
   ctx.save();
-  ctx.fillStyle = bg.palette.nebulaFill;
-  ctx.strokeStyle = bg.palette.nebulaStroke;
-  ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(0, vp.h);
-  ctx.lineTo(0, bandTop);
-  const step = 50;
-  for (let x = 0; x <= vp.w; x += step) {
-    const top = Math.sin(x * 0.01 + 25 * bg.wave) * waveAmp
-             + Math.cos(x * 0.02 + 12 * bg.fastWave) * waveAmp * 0.5;
-    const y = bandTop + top;
-    const prevX = x - step;
-    const prevY = bandTop + Math.sin(prevX * 0.01 + 25 * bg.wave) * waveAmp
-                + Math.cos(prevX * 0.02 + 12 * bg.fastWave) * waveAmp * 0.5;
-    const mx = (prevX + x) / 2;
-    const my = (prevY + y) / 2;
-    ctx.quadraticCurveTo(prevX + step * 0.5, prevY - 4, mx, my);
+  ctx.lineCap = 'round';
+  const strokeWidths = [1.5, 2.5, 3.5]; // plus large pour les couches proches
+  // Trier par layer pour dessiner far → near (bon ordre d'occlusion)
+  const sorted = [...bg.asteroids].sort((a, b) => a.layer - b.layer);
+  for (const a of sorted) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rotation);
+    // Construire les points cartésiens
+    const nSec = a.radii.length;
+    const pts: Array<[number, number]> = [];
+    for (let j = 0; j < nSec; j++) {
+      const ang = (j / nSec) * Math.PI * 2;
+      const r = a.radii[j] * a.size;
+      pts.push([Math.cos(ang) * r, Math.sin(ang) * r]);
+    }
+    // Smoothing via midpoints-as-anchors
+    const mid = (p: [number, number], q: [number, number]): [number, number] => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    ctx.beginPath();
+    const first = mid(pts[nSec - 1], pts[0]);
+    ctx.moveTo(first[0], first[1]);
+    for (let i = 0; i < nSec; i++) {
+      const p0 = pts[i];
+      const p1 = pts[(i + 1) % nSec];
+      const m = mid(p0, p1);
+      ctx.quadraticCurveTo(p0[0], p0[1], m[0], m[1]);
+    }
+    ctx.closePath();
+    ctx.fillStyle = a.fill;
+    ctx.fill();
+    ctx.strokeStyle = bg.palette.asteroidStroke;
+    ctx.lineWidth = strokeWidths[a.layer];
+    ctx.stroke();
+    ctx.restore();
   }
-  ctx.lineTo(vp.w, vp.h);
-  ctx.closePath();
-  ctx.fill();
-  // Trace juste le bord supérieur séparément pour la ligne claire (pas sur les bords verticaux/bas)
-  ctx.beginPath();
-  let firstY = bandTop + Math.sin(0 + 25 * bg.wave) * waveAmp + Math.cos(0 + 12 * bg.fastWave) * waveAmp * 0.5;
-  ctx.moveTo(0, firstY);
-  for (let x = step; x <= vp.w; x += step) {
-    const top = Math.sin(x * 0.01 + 25 * bg.wave) * waveAmp
-             + Math.cos(x * 0.02 + 12 * bg.fastWave) * waveAmp * 0.5;
-    const y = bandTop + top;
-    const prevX = x - step;
-    const prevY = bandTop + Math.sin(prevX * 0.01 + 25 * bg.wave) * waveAmp
-                + Math.cos(prevX * 0.02 + 12 * bg.fastWave) * waveAmp * 0.5;
-    const mx = (prevX + x) / 2;
-    const my = (prevY + y) / 2;
-    ctx.quadraticCurveTo(prevX + step * 0.5, prevY - 4, mx, my);
-  }
-  ctx.stroke();
-  ctx.restore();
-
-  // === 6. Deuxième onde plus fine, contour pur blanc, décalée verticalement ===
-  // Donne l'impression de plusieurs strates de nébuleuse (style Coup Ahoo 2 couches).
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  const bandTop2 = bandTop - 40;
-  const waveAmp2 = 10 + 4 * Math.abs(bg.animationPhase);
-  let firstY2 = bandTop2 + Math.sin(0 * 0.015 + 20 * bg.fastWave) * waveAmp2;
-  ctx.moveTo(0, firstY2);
-  for (let x = step; x <= vp.w; x += step) {
-    const top = Math.sin(x * 0.015 + 20 * bg.fastWave) * waveAmp2
-             + Math.cos(x * 0.025 + 15 * bg.wave) * waveAmp2 * 0.4;
-    const y = bandTop2 + top;
-    const prevX = x - step;
-    const prevY = bandTop2 + Math.sin(prevX * 0.015 + 20 * bg.fastWave) * waveAmp2
-                + Math.cos(prevX * 0.025 + 15 * bg.wave) * waveAmp2 * 0.4;
-    const mx = (prevX + x) / 2;
-    const my = (prevY + y) / 2;
-    ctx.quadraticCurveTo(prevX + step * 0.5, prevY - 2, mx, my);
-  }
-  ctx.stroke();
   ctx.restore();
 }
